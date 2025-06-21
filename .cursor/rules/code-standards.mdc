@@ -1,5 +1,36 @@
 ---
-description:
-globs:
-alwaysApply: false
+description: 
+globs: 
+alwaysApply: true
 ---
+# Code Standards
+
+## Naming Conventions
+- Use camelCase for variables and functions
+- Use PascalCase for classes and components
+- Use UPPER_SNAKE_CASE for constants
+- Use descriptive names that explain purpose
+
+## Code Structure
+- Keep functions under 50 lines when possible
+- Use meaningful variable names
+- Add comments for complex logic
+- Group related functionality together
+
+## Error Handling
+- Always handle potential errors
+- Use try-catch blocks appropriately
+- Provide meaningful error messages
+- Log errors for debugging
+
+## Documentation
+- Document public APIs
+- Add JSDoc comments for functions
+- Include examples for complex usage
+- Keep documentation up to date
+
+## Performance
+- Avoid unnecessary computations
+- Use appropriate data structures
+- Consider memory usage
+- Optimize critical paths

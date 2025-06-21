@@ -57,4 +57,4 @@ alwaysApply: false  # Optional: whether to always include
 
 ## Legacy Support
 
-The `requirements.cursorrules` file in the root is deprecated. Use the `.cursor/rules` directory instead for better organization and control. 
+The `requirements.cursorrules` file in the root is deprecated. Use the `.cursor/rules` directory instead for better organization and control.
