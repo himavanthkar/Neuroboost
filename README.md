@@ -99,4 +99,4 @@ docker-compose down -v
 - **Build failures**: Check service-specific Dockerfile and requirements
 - **Permission issues**: Ensure Docker has proper permissions
 
-Built with ❤️ for the hackathon! 
+Built with ❤️ for the hackathon!
