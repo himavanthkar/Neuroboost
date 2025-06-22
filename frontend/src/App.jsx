@@ -7,6 +7,7 @@ import SmartSchedule from './components/SmartSchedule';
 import MotivationCard from './components/MotivationCard';
 import WeeklyTasksView from './components/WeeklyTasksView';
 import LevelUpStatus from './components/LevelUpStatus';
+import CalendarView from './components/CalendarView';
 
 function App() {
   const [theme, setTheme] = useState('light');
@@ -110,7 +111,7 @@ function App() {
       case 'notes':
         return <div className="p-6">Transcribed Notes - Coming Soon</div>;
       case 'calendar':
-        return <div className="p-6">Calendar View - Coming Soon</div>;
+        return <CalendarView theme={theme} tasks={tasks} />;
       case 'cbt':
         return <div className="p-6">CBT Tools - Coming Soon</div>;
       case 'analytics':

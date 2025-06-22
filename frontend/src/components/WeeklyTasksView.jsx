@@ -74,7 +74,7 @@ const WeeklyTasksView = ({ theme, tasks, onToggle, onDelete, onAdd, onClearAll }
   const days = Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i));
 
   const renderSlothView = () => (
-    <div className={`text-center p-8 rounded-lg mb-4 ${theme === 'dark' ? 'bg-gray-800' : 'bg-gray-100'}`}>
+    <div className={`text-center p-8 rounded-lg mb-4 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
         <img src={slothImage} alt="Sleeping sloth" className="mx-auto mb-4 w-48" />
         <p className={`text-lg mb-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
             {noTasks ? "No tasks for this week. Add one to get started!" : "Assignments are all completed"}
