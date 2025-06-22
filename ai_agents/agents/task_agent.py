@@ -30,6 +30,27 @@ class TaskAgent:
             )
         return self.anthropic_client
     
+    def map_day_to_date(self, day_string: str) -> str:
+        """
+        Maps a day of the week (e.g., "monday") to the next occurrence of that day's date.
+        Returns the date in "YYYY-MM-DD" format.
+        """
+        today = datetime.now()
+        day_string = day_string.lower()
+        days_of_week = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+        
+        if day_string not in days_of_week:
+            return today.strftime("%Y-%m-%d") # Default to today if day is invalid
+            
+        target_weekday = days_of_week.index(day_string)
+        days_ahead = target_weekday - today.weekday()
+        
+        if days_ahead < 0: # Target day has already passed this week
+            days_ahead += 7
+            
+        target_date = today + timedelta(days=days_ahead)
+        return target_date.strftime("%Y-%m-%d")
+
     def voice_to_task(self, transcript: str) -> Union[Dict, List[Dict]]:
         """
         🎤 VOICE TO STRUCTURED TASKS

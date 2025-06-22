@@ -1,51 +1,21 @@
-<<<<<<< HEAD
-from fastapi import FastAPI, Request
-from task_agent import TaskAgent
-import json
-
-app = FastAPI()
-
-# Initialize the agent
-task_agent = TaskAgent()
-
-@app.get("/")
-def read_root():
-    return {"message": "AI Agents service is running"}
-
-@app.post("/vapi-webhook")
-async def handle_vapi_webhook(request: Request):
-    """
-    Endpoint to handle Vapi 'transcript-final' webhooks.
-    """
-    body = await request.json()
-    
-    # Vapi sends different message types, we only care about the final transcript
-    if body.get('message', {}).get('type') == 'transcript-final':
-        transcript = body['message']['transcript']
-        
-        # Process the transcript using our agent
-        extracted_data = task_agent.process_transcript(transcript)
-        
-        # The agent returns a JSON string, so we parse it
-        if extracted_data:
-            return json.loads(extracted_data)
-        
-        return {"status": "error", "message": "Agent returned no data"}
-        
-    return {"status": "ignored", "message": "Not a final transcript"} 
-=======
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from dotenv import load_dotenv
 import redis
 import json
+import logging
 from agents.mood_agent import MoodAgent
 from agents.task_agent import TaskAgent
 from agents.focus_agent import FocusAgent
 from agents.motivate_agent import MotivateAgent
+from datetime import datetime
 
 load_dotenv()
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="NeuroBoost AI Agents", version="1.0.0")
 
@@ -62,7 +32,7 @@ app.add_middleware(
 redis_host = os.getenv("REDIS_HOST", "localhost")
 redis_port = int(os.getenv("REDIS_PORT", 6379))
 redis_password = os.getenv("REDIS_PASSWORD")
-redis_client = redis.Redis(host=redis_host, port=redis_port, password=redis_password)
+redis_client = redis.Redis(host=redis_host, port=redis_port, password=redis_password, decode_responses=True)
 
 # Initialize AI Agents
 mood_agent = MoodAgent()
@@ -92,10 +62,71 @@ async def detect_mood(data: dict):
 
 @app.post("/tasks/from-voice")
 async def voice_to_tasks(data: dict):
-    """Convert voice transcript to structured tasks using Claude 4"""
+    """Convert voice transcript to structured tasks"""
     try:
         tasks = task_agent.voice_to_task(data["transcript"])
-        return {"tasks": tasks, "source": "voice", "ai_model": "claude-4"}
+
+        # After creating tasks, publish an event to notify the frontend
+        redis_client.publish("task_updates", json.dumps({"event": "tasks_updated", "tasks": tasks}))
+        
+        return {"tasks": tasks, "source": "voice"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/tasks/add")
+async def add_task(data: dict):
+    """
+    Adds a new task based on structured data and notifies frontend.
+    """
+    try:
+        day = data.get("day")
+        task_text = data.get("task")
+        
+        if not day or not task_text:
+            raise HTTPException(status_code=400, detail="Missing task or day")
+
+        # Create a new task object matching the frontend structure
+        # NOTE: This logic should ideally be in the TaskAgent
+        new_task = {
+            "id": f"task_{datetime.now().timestamp()}",
+            "text": task_text,
+            "done": False,
+            # This is a simplification; a real app would need robust date mapping
+            "date": task_agent.map_day_to_date(day), 
+            "completedAt": None,
+            "source": "vapi"
+        }
+
+        # We need to wrap it in the format App.jsx expects
+        task_update_payload = {
+            "tasks": [new_task]
+        }
+        
+        # Publish the update to Redis
+        redis_client.publish("task_updates", json.dumps({"event": "task_added", "tasks": task_update_payload}))
+        
+        return {"success": True, "message": f"Successfully added '{task_text}' to {day}", "task": new_task}
+    except Exception as e:
+        logger.error(f"Error adding task: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/tasks/remove")
+async def remove_task(data: dict):
+    """
+    Removes a task. Note: This is a conceptual implementation.
+    A real implementation would require a way to identify the task to remove (e.g., by ID).
+    """
+    try:
+        # For this to work, VAPI would need to know the task ID.
+        # This would require a more complex conversational flow.
+        task_id_to_remove = data.get("taskId")
+        
+        # Here you would delete the task from the database
+        
+        # Then notify the frontend
+        redis_client.publish("task_updates", json.dumps({"event": "task_removed", "taskId": task_id_to_remove}))
+        
+        return {"success": True, "message": "Task removal processed."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -123,5 +154,4 @@ async def get_motivation(data: dict):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
->>>>>>> d8fecf339a001a977efb08822066f258e0980daa
+    uvicorn.run(app, host="0.0.0.0", port=8000)

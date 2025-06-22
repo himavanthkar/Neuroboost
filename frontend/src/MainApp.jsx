@@ -14,6 +14,7 @@ import SettingsPage from './components/SettingsPage';
 import { useTheme } from './context/ThemeContext';
 
 const notificationSound = new Audio('https://orangefreesounds.com/wp-content/uploads/2020/04/Alert-notification.mp3');
+const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3000';
 
 function MainApp() {
   const { darkMode } = useTheme();
@@ -26,6 +27,51 @@ function MainApp() {
     { id: 3, text: "Write history essay outline", done: false, date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10), completedAt: null },
   ]);
   const [totalCompletedTasks, setTotalCompletedTasks] = useState(() => tasks.filter(t => t.done).length);
+
+  // WebSocket connection for real-time updates
+  useEffect(() => {
+    const ws = new WebSocket(WS_URL);
+
+    ws.onopen = () => {
+      console.log('WebSocket connection established');
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log('Received WebSocket message:', data);
+
+      if (data.event === 'tasks_updated' && data.tasks) {
+        const newTasks = data.tasks.tasks.map(task => ({
+          id: task.id || Date.now() + Math.random(),
+          text: task.title,
+          done: false,
+          date: task.due_date || new Date().toISOString().slice(0, 10),
+          completedAt: null
+        }));
+        
+        setTasks(prevTasks => [...prevTasks, ...newTasks]);
+        notificationSound.play();
+      }
+      
+      if (data.event === 'mood_updated' && data.mood) {
+          setMood(data.mood.mood);
+          notificationSound.play();
+      }
+    };
+
+    ws.onclose = () => {
+      console.log('WebSocket connection closed');
+      // Optional: implement reconnection logic here
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, []);
 
   // CBT Timer state
   const [cbtMode, setCbtMode] = useState(true);
@@ -214,4 +260,4 @@ function MainApp() {
   );
 }
 
-export default MainApp; 
+export default MainApp;
