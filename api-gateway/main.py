@@ -1,6 +1,21 @@
+<<<<<<< HEAD
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from ai_agents.task_agent import TaskAgent
+=======
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import JSONResponse
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+from ai_agents.agents.task_agent import TaskAgent
+>>>>>>> d8fecf339a001a977efb08822066f258e0980daa
 import json
 import logging
 from typing import Dict, Any
@@ -68,8 +83,12 @@ async def handle_transcript_final(message: Dict[str, Any]):
     
     try:
         # Process the transcript using our agent
+<<<<<<< HEAD
         extracted_data_str = task_agent.process_transcript(transcript)
         extracted_data = json.loads(extracted_data_str)
+=======
+        extracted_data = task_agent.voice_to_task(transcript)
+>>>>>>> d8fecf339a001a977efb08822066f258e0980daa
         logger.info(f"TaskAgent extracted: {extracted_data}")
         
         # Vapi doesn't require a specific response for this webhook,
@@ -119,4 +138,34 @@ async def health_check():
     return {
         "status": "healthy", 
         "service": "AI Agents Service"
+<<<<<<< HEAD
     } 
+=======
+    }
+
+# Optional: Add an endpoint to test your TaskAgent directly
+@app.post("/test-agent")
+async def test_agent(request: Request):
+    """
+    Direct endpoint to test the TaskAgent without VAPI.
+    Useful for debugging and development.
+    """
+    try:
+        body = await request.json()
+        transcript = body.get('transcript', '')
+        
+        if not transcript:
+            raise HTTPException(status_code=400, detail="No transcript provided")
+        
+        parsed_result = task_agent.voice_to_task(transcript)
+        
+        return {
+            "status": "success",
+            "input": transcript,
+            "output": parsed_result
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in test endpoint: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e)) 
+>>>>>>> d8fecf339a001a977efb08822066f258e0980daa
