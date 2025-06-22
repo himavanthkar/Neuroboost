@@ -1,6 +1,2 @@
 python-dotenv
-requests
-fastapi
-uvicorn
-anthropic
-groq 
+requests 

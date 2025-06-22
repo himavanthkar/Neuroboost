@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Vapi from '@vapi-ai/web';
 
-const vapi = new Vapi(process.env.REACT_APP_VAPI_PUBLIC_KEY || '38a5bc22-1c43-4d10-95b6-29dcad2aa65d');
+const vapi = new Vapi(import.meta.env.VITE_VAPI_PUBLIC_KEY || '38a5bc22-1c43-4d10-95b6-29dcad2aa65d');
 
 const vapiAssistantConfig = {
   model: {
@@ -48,7 +48,7 @@ const vapiAssistantConfig = {
       }
     }
   ],
-  serverUrl: process.env.REACT_APP_VAPI_WEBHOOK_URL || "https://your-domain.com/api/vapi-webhook"
+  serverUrl: "https://2b59-2607-f140-400-39-3071-598e-3edf-4736.ngrok-free.app/vapi-webhook"
 };
 
 
