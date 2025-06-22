@@ -1,5 +1,4 @@
 import React from 'react';
-import DashboardCard from './DashboardCard';
 
 // Import the evolution images
 import slumberbloomImg from '../assets/Slumberbloom.png';
@@ -27,30 +26,30 @@ const LevelUpStatus = ({ theme, xp, isFullPage = false }) => {
     progressPercent = (xpEarnedThisLevel / xpNeededForNextLevel) * 100;
     xpForNextLevel = nextEvolution.xpThreshold;
   }
-  
-  const cardContent = (
-    <div className="flex flex-col items-center text-center">
+
+  const content = (
+    <div className="flex flex-col items-center text-center p-4">
       <img 
         src={currentEvolution.image} 
         alt={currentEvolution.name} 
-        className="w-32 h-32 object-contain mb-4"
+        className="w-48 h-48 md:w-64 md:h-64 object-contain mb-6 transition-transform duration-500 hover:scale-110"
       />
-      <h4 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+      <h3 className={`text-3xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
         {currentEvolution.name}
-      </h4>
-      <p className={`text-sm mb-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+      </h3>
+      <p className={`text-lg mb-6 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
         Level {currentEvolution.level}
       </p>
-      <div className="w-full">
-        <div className="flex justify-between items-center mb-1 text-xs">
-          <span className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>XP</span>
+      <div className="w-full max-w-md">
+        <div className="flex justify-between items-center mb-2 text-sm font-medium">
+          <span className={`${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>XP</span>
           <span className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
             {xp} / {xpForNextLevel}
           </span>
         </div>
-        <div className={`w-full ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} rounded-full h-2.5`}>
+        <div className={`w-full ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} rounded-full h-4`}>
           <div 
-            className="bg-yellow-400 h-2.5 rounded-full transition-all duration-500" 
+            className="bg-gradient-to-r from-yellow-400 to-orange-500 h-4 rounded-full transition-all duration-500" 
             style={{ width: `${progressPercent}%` }}>
           </div>
         </div>
@@ -61,20 +60,22 @@ const LevelUpStatus = ({ theme, xp, isFullPage = false }) => {
   if (isFullPage) {
     return (
       <div className="p-6">
-        <h2 className={`text-2xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+        <h2 className={`text-3xl font-bold mb-6 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
           Your Companion's Evolution
         </h2>
-        <div className={`p-6 rounded-lg ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
-          {cardContent}
+        <div className={`p-6 rounded-lg shadow-lg ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+          {content}
         </div>
       </div>
     );
   }
 
+  // This is for the dashboard view, keeping it more compact
   return (
-    <DashboardCard title="Your Companion" theme={theme}>
-      {cardContent}
-    </DashboardCard>
+    <div className={`p-6 rounded-lg shadow-md ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+      <h3 className={`text-lg font-semibold mb-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Your Companion</h3>
+      {content}
+    </div>
   );
 };
 
