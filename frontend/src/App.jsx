@@ -1,56 +1,52 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
+
+const moods = ['calm', 'focused', 'energized'];
 
 function App() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [currentMood, setCurrentMood] = useState('calm');
+
+  const moodColors = useMemo(() => ({
+    calm: 'text-blue-500',
+    focused: 'text-indigo-600',
+    energized: 'text-amber-500',
+  }), []);
+
+  const cycleMood = () => {
+    const currentIndex = moods.indexOf(currentMood);
+    const nextIndex = (currentIndex + 1) % moods.length;
+    setCurrentMood(moods[nextIndex]);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Navigation */}
       <nav className="bg-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <h1 className="text-2xl font-bold text-indigo-600">NeuroBoost</h1>
-              </div>
-            </div>
-            
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-700 hover:text-indigo-600 transition-colors">Features</a>
-              <a href="#about" className="text-gray-700 hover:text-indigo-600 transition-colors">About</a>
-              <a href="#contact" className="text-gray-700 hover:text-indigo-600 transition-colors">Contact</a>
-              <button className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
-                Get Started
-              </button>
+          <div className="flex justify-between items-center h-16">
+            {/* Left Spacer */}
+            <div className="flex-1"></div>
+
+            {/* Centered Title */}
+            <div className="flex-shrink-0">
+              <h1 className="text-4xl font-bold text-indigo-600">NeuroBoost</h1>
             </div>
 
-            {/* Mobile menu button */}
-            <div className="md:hidden flex items-center">
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="text-gray-700 hover:text-indigo-600"
-              >
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            {/* Right-side Icons */}
+            <div className="flex-1 flex justify-end items-center space-x-4">
+              <button className={`hover:opacity-75 transition-opacity ${moodColors[currentMood]}`}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-14 0m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v3a3 3 0 01-3 3z" />
                 </svg>
               </button>
+              <button className={`hover:opacity-75 transition-opacity ${moodColors[currentMood]}`}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </button>
+              <img className="h-8 w-8 rounded-full" src="https://via.placeholder.com/40" alt="Profile" />
             </div>
           </div>
-
-          {/* Mobile Navigation */}
-          {isMenuOpen && (
-            <div className="md:hidden">
-              <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-                <a href="#features" className="block px-3 py-2 text-gray-700 hover:text-indigo-600">Features</a>
-                <a href="#about" className="block px-3 py-2 text-gray-700 hover:text-indigo-600">About</a>
-                <a href="#contact" className="block px-3 py-2 text-gray-700 hover:text-indigo-600">Contact</a>
-                <button className="w-full mt-2 bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">
-                  Get Started
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </nav>
 
@@ -58,14 +54,15 @@ function App() {
       <div className="relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-              Boost Your
-              <span className="text-indigo-600"> Brain Power</span>
-            </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              Discover the revolutionary cognitive enhancement platform that helps you unlock your full mental potential. 
-              Join thousands of users who have transformed their cognitive performance.
-            </p>
+            {/* Demo button to cycle through moods */}
+            <div className="mb-8">
+                <button 
+                  onClick={cycleMood}
+                  className="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Cycle Mood (Current: {currentMood})
+                </button>
+            </div>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button className="bg-indigo-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-indigo-700 transition-colors shadow-lg">
                 Start Free Trial
