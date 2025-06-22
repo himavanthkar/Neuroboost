@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 import redis
 import json
 import logging
+import httpx
+from datetime import datetime
 
 # Add current directory to Python path for imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -14,7 +16,6 @@ from agents.mood_agent import MoodAgent
 from agents.task_agent import TaskAgent
 from agents.focus_agent import FocusAgent
 from agents.motivate_agent import MotivateAgent
-from datetime import datetime
 
 load_dotenv()
 
@@ -32,6 +33,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Supabase configuration
+SUPABASE_URL = os.getenv("SUPABASE_URL", "https://hbarpylljytrdijjcmix.supabase.co")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhiYXJweWxsanl0cmRpampjbWl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1ODY4MzYsImV4cCI6MjA2NjE2MjgzNn0.o_3fPqCDW-GnKKTr_gA-Hg5qarkWO_sNj76QVEQc95Q")
 
 # Redis for real-time mood updates (optional for local development)
 redis_host = os.getenv("REDIS_HOST", "localhost")
@@ -53,6 +58,44 @@ mood_agent = MoodAgent()
 task_agent = TaskAgent()
 focus_agent = FocusAgent()
 motivate_agent = MotivateAgent()
+
+async def save_task_to_supabase(task_data, user_id="demo"):
+    """Save task to Supabase database"""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{SUPABASE_URL}/rest/v1/tasks",
+                headers={
+                    "apikey": SUPABASE_ANON_KEY,
+                    "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
+                    "Content-Type": "application/json",
+                    "Prefer": "return=representation"
+                },
+                json={
+                    "user_id": user_id,
+                    "text": task_data["text"],
+                    "type": task_data.get("type", "personal"),
+                    "energy_required": task_data.get("energy_required", "medium"),
+                    "difficulty": task_data.get("difficulty", "medium"),
+                    "done": task_data.get("done", False),
+                    "date": task_data["date"],
+                    "source": task_data.get("source", "voice"),
+                    "tags": task_data.get("tags", []),
+                    "priority": task_data.get("priority", 3),
+                    "created_at": datetime.now().isoformat(),
+                    "updated_at": datetime.now().isoformat()
+                }
+            )
+            
+            if response.status_code == 201:
+                logger.info(f"Task saved to Supabase: {task_data['text']}")
+                return response.json()[0]  # Supabase returns array
+            else:
+                logger.error(f"Failed to save task to Supabase: {response.status_code} - {response.text}")
+                return None
+    except Exception as e:
+        logger.error(f"Error saving task to Supabase: {e}")
+        return None
 
 @app.get("/health")
 async def health_check():
@@ -101,17 +144,32 @@ async def add_task(data: dict):
         if not day or not task_text:
             raise HTTPException(status_code=400, detail="Missing task or day")
 
+        # Map day to actual date
+        mapped_date = task_agent.map_day_to_date(day)
+        logger.info(f"Mapping '{day}' to date: {mapped_date}")
+
         # Create a new task object matching the frontend structure
-        # NOTE: This logic should ideally be in the TaskAgent
         new_task = {
             "id": f"task_{datetime.now().timestamp()}",
             "text": task_text,
             "done": False,
-            # This is a simplification; a real app would need robust date mapping
-            "date": task_agent.map_day_to_date(day), 
+            "date": mapped_date,
             "completedAt": None,
-            "source": "vapi"
+            "source": "voice",
+            "type": data.get("type", "personal"),
+            "energy_required": "medium",
+            "difficulty": "medium",
+            "tags": [],
+            "priority": 3
         }
+
+        # Save to Supabase database
+        saved_task = await save_task_to_supabase(new_task)
+        if saved_task:
+            new_task["id"] = saved_task["id"]  # Use the real ID from database
+            logger.info(f"Task saved to database with ID: {saved_task['id']}")
+        else:
+            logger.warning("Failed to save task to database, but continuing with local task")
 
         # We need to wrap it in the format App.jsx expects
         task_update_payload = {
@@ -122,7 +180,7 @@ async def add_task(data: dict):
         if redis_client:
             redis_client.publish("task_updates", json.dumps({"event": "task_added", "tasks": task_update_payload}))
         
-        return {"success": True, "message": f"Successfully added '{task_text}' to {day}", "task": new_task}
+        return {"success": True, "message": f"Successfully added '{task_text}' to {day} ({mapped_date})", "task": new_task}
     except Exception as e:
         logger.error(f"Error adding task: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
@@ -250,6 +308,39 @@ async def debug_voice_notes():
         {"id": 3, "user_id": "admin", "transcript": "Schedule meeting", "timestamp": "2024-06-22T12:00:00Z"}
     ]
     return {"voice_notes": dummy_notes}
+
+@app.get("/debug/day-mapping/{day}")
+async def debug_day_mapping(day: str):
+    """Debug endpoint to test day to date mapping"""
+    mapped_date = task_agent.map_day_to_date(day)
+    return {
+        "input_day": day,
+        "mapped_date": mapped_date,
+        "current_date": datetime.now().strftime("%Y-%m-%d"),
+        "day_of_week": datetime.now().strftime("%A")
+    }
+
+@app.get("/debug/tasks")
+async def debug_tasks():
+    """Debug endpoint to return all tasks from database"""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{SUPABASE_URL}/rest/v1/tasks",
+                headers={
+                    "apikey": SUPABASE_ANON_KEY,
+                    "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
+                    "Content-Type": "application/json"
+                }
+            )
+            
+            if response.status_code == 200:
+                tasks = response.json()
+                return {"tasks": tasks, "count": len(tasks)}
+            else:
+                return {"error": f"Failed to fetch tasks: {response.status_code}", "tasks": []}
+    except Exception as e:
+        return {"error": str(e), "tasks": []}
 
 if __name__ == "__main__":
     import uvicorn

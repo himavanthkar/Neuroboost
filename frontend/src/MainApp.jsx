@@ -17,6 +17,7 @@ import TranscribedNotes from './components/TranscribedNotes';
 import { useTheme } from './context/ThemeContext';
 import { useAuth } from './context/AuthContext';
 import SimpleVoiceWidget from './components/SimpleVoiceWidget';
+import { supabase } from './services/supabase';
 
 const notificationSound = new Audio('https://orangefreesounds.com/wp-content/uploads/2020/04/Alert-notification.mp3');
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3000';
@@ -34,12 +35,53 @@ function MainApp() {
   const [mood, setMood] = useState('focused');
   const [profilePic, setProfilePic] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [tasks, setTasks] = useState([
-    { id: 1, text: "Complete math assignment", done: true, date: new Date().toISOString().slice(0, 10), completedAt: new Date().toISOString() },
-    { id: 2, text: "Review chemistry notes", done: false, date: new Date().toISOString().slice(0, 10), completedAt: null },
-    { id: 3, text: "Write history essay outline", done: false, date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10), completedAt: null },
-  ]);
-  const [totalCompletedTasks, setTotalCompletedTasks] = useState(() => tasks.filter(t => t.done).length);
+  const [tasks, setTasks] = useState([]);
+  const [totalCompletedTasks, setTotalCompletedTasks] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  // Load tasks from Supabase
+  const loadTasks = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading tasks:', error);
+        return;
+      }
+
+      // Transform Supabase data to match frontend format
+      const transformedTasks = data.map(task => ({
+        id: task.id,
+        text: task.text,
+        done: task.done,
+        date: task.date,
+        completedAt: task.completed_at,
+        type: task.type,
+        energy_required: task.energy_required,
+        difficulty: task.difficulty,
+        source: task.source
+      }));
+
+      setTasks(transformedTasks);
+      setTotalCompletedTasks(transformedTasks.filter(t => t.done).length);
+    } catch (error) {
+      console.error('Error loading tasks:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load tasks on component mount and when user changes
+  useEffect(() => {
+    if (currentUser) {
+      loadTasks();
+    }
+  }, [currentUser]);
 
   // Check if user is admin
   useEffect(() => {
@@ -130,43 +172,118 @@ function MainApp() {
     setActiveTab(tab);
   };
 
-  const handleToggleTask = (id) => {
-    let taskCompleted = false;
-    setTasks(tasks.map(task => {
-      if (task.id === id) {
-        const isNowDone = !task.done;
-        if (isNowDone) {
-          taskCompleted = true;
-        }
-        return { ...task, done: isNowDone, completedAt: isNowDone ? new Date().toISOString() : null };
-      }
-      return task;
-    }));
+  const handleToggleTask = async (id) => {
+    try {
+      const task = tasks.find(t => t.id === id);
+      if (!task) return;
 
-    if (taskCompleted) {
-      setTotalCompletedTasks(prevCount => prevCount + 1);
-    } else {
-      const taskWasDone = tasks.find(t => t.id === id)?.done;
-      if (taskWasDone) {
+      const isNowDone = !task.done;
+      
+      // Update in Supabase
+      const { error } = await supabase
+        .from('tasks')
+        .update({ 
+          done: isNowDone, 
+          completed_at: isNowDone ? new Date().toISOString() : null 
+        })
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error updating task:', error);
+        return;
+      }
+
+      // Update local state
+      setTasks(tasks.map(task => {
+        if (task.id === id) {
+          return { 
+            ...task, 
+            done: isNowDone, 
+            completedAt: isNowDone ? new Date().toISOString() : null 
+          };
+        }
+        return task;
+      }));
+
+      // Update completed count
+      if (isNowDone) {
+        setTotalCompletedTasks(prevCount => prevCount + 1);
+      } else {
         setTotalCompletedTasks(prevCount => Math.max(0, prevCount - 1));
       }
+    } catch (error) {
+      console.error('Error toggling task:', error);
     }
   };
 
-  const handleAddTask = (text, date) => {
+  const handleAddTask = async (text, date) => {
     if (text.trim() === '') return;
-    const newTask = {
-        id: Date.now(),
-        text,
-        done: false,
-        date,
-        completedAt: null
-    };
-    setTasks([...tasks, newTask]);
+    
+    try {
+      // Add to Supabase
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert({
+          user_id: currentUser.id,
+          text: text.trim(),
+          done: false,
+          date: date,
+          type: 'personal',
+          energy_required: 'medium',
+          difficulty: 'medium',
+          source: 'manual'
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error adding task:', error);
+        return;
+      }
+
+      // Add to local state
+      const newTask = {
+        id: data.id,
+        text: data.text,
+        done: data.done,
+        date: data.date,
+        completedAt: data.completed_at,
+        type: data.type,
+        energy_required: data.energy_required,
+        difficulty: data.difficulty,
+        source: data.source
+      };
+
+      setTasks([newTask, ...tasks]);
+    } catch (error) {
+      console.error('Error adding task:', error);
+    }
   };
 
-  const handleDeleteTask = (id) => {
-    setTasks(tasks.filter(task => task.id !== id));
+  const handleDeleteTask = async (id) => {
+    try {
+      // Delete from Supabase
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting task:', error);
+        return;
+      }
+
+      // Remove from local state
+      const taskToDelete = tasks.find(t => t.id === id);
+      setTasks(tasks.filter(task => task.id !== id));
+      
+      // Update completed count if task was done
+      if (taskToDelete?.done) {
+        setTotalCompletedTasks(prevCount => Math.max(0, prevCount - 1));
+      }
+    } catch (error) {
+      console.error('Error deleting task:', error);
+    }
   };
 
   const handleClearAllTasks = () => {
