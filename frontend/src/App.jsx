@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import LandingPage from './pages/LandingPage';
 import SignUp from './pages/SignUp';
 import MainApp from './MainApp';
+import VoiceAssistantWidget from './components/VoiceAssistantWidget';
 
 function App() {
   const [darkMode, setDarkMode] = React.useState(false);
@@ -20,7 +21,7 @@ function App() {
   };
   
   // A placeholder for authentication logic
-  const isAuthenticated = false; 
+  const isAuthenticated = true; // Set to true to see the main app for now
 
   return (
     <Router>
@@ -30,11 +31,12 @@ function App() {
           <Route path="/signup" element={<SignUp darkMode={darkMode} />} />
           <Route 
             path="/app" 
-            element={isAuthenticated ? <MainApp /> : <Navigate to="/" replace />} 
+            element={isAuthenticated ? <MainApp darkMode={darkMode} toggleDarkMode={toggleDarkMode}/> : <Navigate to="/" replace />} 
           />
           {/* Redirect any unknown paths to the landing page */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        <VoiceAssistantWidget />
       </div>
     </Router>
   );

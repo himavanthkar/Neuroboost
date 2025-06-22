@@ -1,64 +1,81 @@
 const express = require('express');
+const http = require('http');
+const { WebSocketServer } = require('ws');
+const redis = require('redis');
 const cors = require('cors');
 const helmet = require('helmet');
-<<<<<<< HEAD
-const dotenv = require('dotenv');
-
-dotenv.config();
-
-const app = express();
-const port = process.env.PORT || 8000;
-
-// Middleware
-app.use(cors());
-app.use(helmet());
-app.use(express.json());
-
-// Basic health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', message: 'API Gateway is healthy' });
-});
-
-// VAPI Webhook Endpoint
-app.post('/vapi-webhook', (req, res) => {
-  console.log('Received webhook call:', JSON.stringify(req.body, null, 2));
-
-  const { message } = req.body;
-
-  // For now, we will just acknowledge the message.
-  // In the future, you can add logic here to handle different message types.
-  if (message) {
-    // A simple response to let Vapi know the message was received.
-    return res.status(200).json({
-      message: "Webhook received successfully."
-    });
-  }
-
-  // If the payload is not what we expect, send a bad request response.
-  return res.status(400).json({ error: 'Invalid payload' });
-});
-
-app.listen(port, () => {
-  console.log(`API Gateway listening on http://localhost:${port}`);
-}); 
-=======
+const axios = require('axios');
 require('dotenv').config();
 
 const app = express();
+const server = http.createServer(app);
+const wss = new WebSocketServer({ server });
 
-// --- Middleware ---
-app.use(cors()); // Enable Cross-Origin Resource Sharing
-app.use(helmet()); // Set various HTTP headers for security
-app.use(express.json()); // Parse JSON bodies
-app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
+// --- WebSocket Connection Handling ---
+wss.on('connection', (ws) => {
+  console.log('Client connected to WebSocket');
+  ws.on('close', () => console.log('Client disconnected'));
+});
 
-// --- Routes ---
+// Function to broadcast messages to all connected clients
+const broadcast = (data) => {
+  wss.clients.forEach((client) => {
+    if (client.readyState === client.OPEN) {
+      client.send(JSON.stringify(data));
+    }
+  });
+};
+
+// --- Redis Pub/Sub ---
+const redisClient = redis.createClient({
+  url: `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`,
+  password: process.env.REDIS_PASSWORD
+});
+
+(async () => {
+  const subscriber = redisClient.duplicate();
+  await subscriber.connect();
+
+  await subscriber.subscribe('task_updates', (message) => {
+    console.log('Received task update from Redis:', message);
+    broadcast(JSON.parse(message));
+  });
+
+  await subscriber.subscribe('mood_updates', (message) => {
+    console.log('Received mood update from Redis:', message);
+    broadcast(JSON.parse(message));
+  });
+
+  console.log('Subscribed to Redis channels: task_updates, mood_updates');
+})();
+
+
+// --- Express Middleware ---
+app.use(cors());
+app.use(helmet());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// --- API Routes ---
 const authRoutes = require('./src/routes/auth');
 const taskRoutes = require('./src/routes/tasks');
 const aiRoutes = require('./src/routes/ai');
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/ai', aiRoutes);
+
+// VAPI Webhook Proxy
+const VOICE_SERVICE_URL = process.env.VOICE_SERVICE_URL || 'http://voice-service:8002';
+app.post('/api/vapi-webhook', async (req, res) => {
+    try {
+        console.log('Proxying VAPI webhook to voice-service');
+        const response = await axios.post(`${VOICE_SERVICE_URL}/vapi-webhook`, req.body);
+        res.status(response.status).json(response.data);
+    } catch (error) {
+        console.error('Error proxying VAPI webhook:', error.message);
+        res.status(500).json({ error: 'Failed to proxy to voice service' });
+    }
+});
 
 // --- Basic Route ---
 app.get('/', (req, res) => {
@@ -67,9 +84,8 @@ app.get('/', (req, res) => {
 
 // --- Server ---
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`API Gateway server is listening on port ${PORT}`);
+server.listen(PORT, () => {
+  console.log(`API Gateway and WebSocket server is listening on port ${PORT}`);
 });
 
-module.exports = app; 
->>>>>>> 86bcd2765441c85686465662273e7b7b8ff8c0e0
+module.exports = { app, server };

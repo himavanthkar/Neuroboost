@@ -59,83 +59,34 @@ def verify_vapi_signature(payload: bytes, signature: str, secret: str) -> bool:
 
 # --- Task Processing Logic ---
 
-async def process_voice_to_tasks(transcript: str) -> Dict[str, Any]:
+async def forward_function_call_to_ai_agent(function_name: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Calls the AI Agents service and enhances the response for voice output.
+    Forwards a function call to the appropriate endpoint on the AI Agents service.
     """
-    if not transcript:
-        return {
-            "summary": "It seems I didn't catch that.",
-            "tasks": [],
-            "encouragement": "Could you please try telling me again?",
-        }
+    endpoint_map = {
+        "addTask": "/tasks/add",
+        "removeTask": "/tasks/remove"
+    }
     
+    endpoint = endpoint_map.get(function_name)
+    if not endpoint:
+        logger.warning(f"No endpoint mapping for function: {function_name}")
+        return {"success": False, "message": f"Unknown function '{function_name}'"}
+
     try:
-        # Call your existing AI Agents service
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                f"{AI_AGENTS_URL}/tasks/from-voice",
-                json={"transcript": transcript}
+                f"{AI_AGENTS_URL}{endpoint}",
+                json=parameters
             )
             response.raise_for_status()
-            raw_response = response.json()
-        
-        # The ai-agents service returns a dict with a 'tasks' list inside it.
-        tasks_list = raw_response.get("tasks", [])
-        
-        # Enhance for ADHD-friendly voice response
-        if not tasks_list:
-            return {
-                "summary": "I didn't find any specific tasks in what you said.",
-                "tasks": [],
-                "encouragement": "That's perfectly okay! Is there anything else on your mind?",
-            }
-        
-        enhanced_tasks = {
-            "summary": f"Great! I found {len(tasks_list)} things for you to work on.",
-            "tasks": tasks_list,
-            "encouragement": "You got this! We can tackle them one step at a time.",
-            "next_action": "Which one feels most manageable to start with?"
-        }
-        
-        return enhanced_tasks
-        
+            return response.json()
+    except httpx.HTTPStatusError as e:
+        logger.error(f"HTTP error calling AI agent for {function_name}: {e.response.text}")
+        return {"success": False, "message": f"Error processing {function_name}: {e.response.text}"}
     except Exception as e:
-        logger.error(f"Error processing transcript with AI Agent: {e}", exc_info=True)
-        return {
-            "summary": "I had a bit of trouble organizing that.",
-            "tasks": [],
-            "encouragement": "No worries though! Want to try telling me again?",
-            "error": str(e)
-        }
-
-def format_tasks_for_speech(structured_tasks: Dict) -> str:
-    """
-    Format structured tasks for ADHD-friendly speech output.
-    """
-    if not structured_tasks.get("tasks"):
-        return structured_tasks.get("encouragement", "Let's try that again!")
-    
-    speech_parts = []
-    
-    # Opening
-    speech_parts.append(structured_tasks.get("summary", "Here's what I organized for you:"))
-    
-    # Tasks (limit to avoid overwhelming)
-    tasks = structured_tasks["tasks"][:5]  # Limit to 5 for voice
-    
-    for i, task in enumerate(tasks, 1):
-        # The structure from task_agent is a dict of dicts.
-        task_title = task.get("title", "An un-named task")
-        speech_parts.append(f"{i}. {task_title}")
-    
-    # Closing encouragement
-    speech_parts.append(structured_tasks.get("encouragement", "You've got this!"))
-    
-    if structured_tasks.get("next_action"):
-        speech_parts.append(structured_tasks["next_action"])
-    
-    return " ".join(speech_parts)
+        logger.error(f"Error forwarding function call '{function_name}': {e}", exc_info=True)
+        return {"success": False, "message": "An internal error occurred."}
 
 # --- API Endpoints ---
 
@@ -161,25 +112,15 @@ async def vapi_webhook(request: Request, payload: VAPIWebhookRequest):
         function_name = message.functionCall.name
         parameters = message.functionCall.parameters
         
-        if function_name == "processTaskInput":
-            # The transcript from the function call is the most reliable source.
-            transcript = parameters.get("transcript", "")
-            
-            try:
-                structured_tasks = await process_voice_to_tasks(transcript)
-                
-                # Return response for VAPI to speak
-                return {
-                    "result": format_tasks_for_speech(structured_tasks)
-                }
-            except Exception as e:
-                logger.error(f"Error handling function call: {e}", exc_info=True)
-                return {
-                    "result": "I had trouble processing that. Could you try telling me again?"
-                }
+        logger.info(f"Executing function: {function_name} with params: {parameters}")
+        
+        # Forward to AI agent and get result
+        result = await forward_function_call_to_ai_agent(function_name, parameters)
+        
+        # Return result to VAPI so it can be spoken to the user
+        return {"result": result.get("message", "Action completed.")}
 
     elif message.type == "transcript" and message.transcript:
-        # This can be used as a fallback or for logging purposes.
         logger.info(f"Processed transcript directly: {message.transcript}")
         return {"status": "transcript_received"}
     
@@ -208,13 +149,9 @@ async def test_agent(request: Request):
         if not transcript:
             raise HTTPException(status_code=400, detail="No transcript provided")
         
-        structured_tasks = await process_voice_to_tasks(transcript)
-        
-        return {
-            "status": "success",
-            "input": transcript,
-            "output": structured_tasks
-        }
+        # This part of the test endpoint is now outdated as we don't process raw transcripts this way.
+        # It could be adapted to test the function call forwarding if needed.
+        return {"status": "success", "message": "Test endpoint needs update for function calls."}
         
     except Exception as e:
         logger.error(f"Error in test endpoint: {e}", exc_info=True)

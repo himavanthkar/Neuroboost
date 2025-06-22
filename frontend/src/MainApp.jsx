@@ -13,9 +13,9 @@ import AnalyticsView from './components/AnalyticsView';
 import SettingsPage from './components/SettingsPage';
 
 const notificationSound = new Audio('https://orangefreesounds.com/wp-content/uploads/2020/04/Alert-notification.mp3');
+const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3000';
 
-function App() {
-  const [theme, setTheme] = useState('light');
+function MainApp({ darkMode, toggleDarkMode }) {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [mood, setMood] = useState('focused');
   const [profilePic, setProfilePic] = useState(null);
@@ -25,6 +25,51 @@ function App() {
     { id: 3, text: "Write history essay outline", done: false, date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10), completedAt: null },
   ]);
   const [totalCompletedTasks, setTotalCompletedTasks] = useState(() => tasks.filter(t => t.done).length);
+
+  // WebSocket connection for real-time updates
+  useEffect(() => {
+    const ws = new WebSocket(WS_URL);
+
+    ws.onopen = () => {
+      console.log('WebSocket connection established');
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log('Received WebSocket message:', data);
+
+      if (data.event === 'tasks_updated' && data.tasks) {
+        const newTasks = data.tasks.tasks.map(task => ({
+          id: task.id || Date.now() + Math.random(),
+          text: task.title,
+          done: false,
+          date: task.due_date || new Date().toISOString().slice(0, 10),
+          completedAt: null
+        }));
+        
+        setTasks(prevTasks => [...prevTasks, ...newTasks]);
+        notificationSound.play();
+      }
+      
+      if (data.event === 'mood_updated' && data.mood) {
+          setMood(data.mood.mood);
+          notificationSound.play();
+      }
+    };
+
+    ws.onclose = () => {
+      console.log('WebSocket connection closed');
+      // Optional: implement reconnection logic here
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, []);
 
   // CBT Timer state
   const [cbtMode, setCbtMode] = useState(true);
@@ -58,10 +103,6 @@ function App() {
 
     return () => clearInterval(timer);
   }, [cbtMode, cbtTimerActive]);
-
-  const handleThemeToggle = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
-  };
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -144,10 +185,10 @@ function App() {
   const renderDashboard = () => (
     <div className="p-6 space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <DailyPKGSummary theme={theme} />
-        <LevelUpStatus theme={theme} xp={totalCompletedTasks} />
+        <DailyPKGSummary theme={darkMode ? 'dark' : 'light'} />
+        <LevelUpStatus theme={darkMode ? 'dark' : 'light'} xp={totalCompletedTasks} />
         <TodoList 
-          theme={theme}
+          theme={darkMode ? 'dark' : 'light'}
           tasks={tasks.filter(t => t.date === new Date().toISOString().slice(0, 10))}
           onToggle={handleToggleTask}
           onDelete={handleDeleteTask}
@@ -157,8 +198,8 @@ function App() {
         />
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <SmartSchedule theme={theme} />
-        <MotivationCard mood={mood} theme={theme} />
+        <SmartSchedule theme={darkMode ? 'dark' : 'light'} />
+        <MotivationCard mood={mood} theme={darkMode ? 'dark' : 'light'} />
       </div>
     </div>
   );
@@ -169,7 +210,7 @@ function App() {
         return renderDashboard();
       case 'tasks':
         return <WeeklyTasksView 
-          theme={theme}
+          theme={darkMode ? 'dark' : 'light'}
           tasks={tasks}
           onToggle={handleToggleTask}
           onDelete={handleDeleteTask}
@@ -178,17 +219,17 @@ function App() {
         />;
       case 'gamification':
         return <LevelUpStatus 
-          theme={theme}
+          theme={darkMode ? 'dark' : 'light'}
           xp={totalCompletedTasks}
           isFullPage={true} 
         />;
       case 'notes':
         return <div className="p-6">Transcribed Notes - Coming Soon</div>;
       case 'calendar':
-        return <CalendarView theme={theme} tasks={tasks} />;
+        return <CalendarView theme={darkMode ? 'dark' : 'light'} tasks={tasks} />;
       case 'cbt':
         return <CBTPomodoroFlow 
-          theme={theme}
+          theme={darkMode ? 'dark' : 'light'}
           cbtMode={cbtMode}
           cbtTimeLeft={cbtTimeLeft}
           cbtTimerActive={cbtTimerActive}
@@ -198,11 +239,11 @@ function App() {
           skipToPlayZone={skipToPlayZone}
         />;
       case 'analytics':
-        return <AnalyticsView theme={theme} tasks={tasks} />;
+        return <AnalyticsView theme={darkMode ? 'dark' : 'light'} tasks={tasks} />;
       case 'settings':
         return <SettingsPage 
-          theme={theme} 
-          onThemeToggle={handleThemeToggle} 
+          theme={darkMode ? 'dark' : 'light'} 
+          onThemeToggle={toggleDarkMode} 
           profilePic={profilePic}
           onProfilePicChange={handleProfilePicChange}
         />;
@@ -212,11 +253,11 @@ function App() {
   };
 
   return (
-    <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
+    <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
       <TopNavBar 
         mood={mood} 
-        theme={theme} 
-        onThemeToggle={handleThemeToggle} 
+        theme={darkMode ? 'dark' : 'light'} 
+        onThemeToggle={toggleDarkMode} 
         onTabChange={handleTabChange}
         profilePic={profilePic}
       />
@@ -224,7 +265,7 @@ function App() {
         <Sidebar 
           activeTab={activeTab} 
           onTabChange={handleTabChange} 
-          theme={theme} 
+          theme={darkMode ? 'dark' : 'light'} 
         />
         <main className="flex-1">
           {renderContent()}
@@ -234,4 +275,4 @@ function App() {
   );
 }
 
-export default App;
+export default MainApp;
