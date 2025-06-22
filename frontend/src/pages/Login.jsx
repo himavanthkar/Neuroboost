@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Brain } from 'lucide-react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebase';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
   const { darkMode } = useTheme();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -18,8 +18,35 @@ const Login = () => {
     setLoading(true);
     setError(null);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      navigate('/app');
+      const result = await login(email, password);
+      if (result.success) {
+        navigate('/app');
+      } else {
+        setError(result.error || 'Login failed');
+      }
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const quickLogin = async (type) => {
+    setLoading(true);
+    setError(null);
+    try {
+      let result;
+      if (type === 'admin') {
+        result = await login('admin@neuroboost.com', 'admin123');
+      } else if (type === 'demo') {
+        result = await login('demo@neuroboost.com', 'demo123');
+      }
+      
+      if (result.success) {
+        navigate('/app');
+      } else {
+        setError(result.error || 'Login failed');
+      }
     } catch (error) {
       setError(error.message);
     } finally {
@@ -40,6 +67,25 @@ const Login = () => {
           <p className={`mt-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
             Or <Link to="/signup" className="font-medium text-blue-500 hover:text-blue-400">create a new account</Link>
           </p>
+        </div>
+
+        {/* Quick Login Credentials */}
+        <div className={`p-4 rounded-lg border ${darkMode ? 'bg-gray-800 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
+          <h3 className={`text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Quick Login:</h3>
+          <div className="space-y-2">
+            <button
+              onClick={() => quickLogin('admin')}
+              className="w-full text-left px-3 py-2 rounded text-sm bg-red-100 text-red-800 hover:bg-red-200 transition-colors"
+            >
+              👑 Admin: admin@neuroboost.com / admin123
+            </button>
+            <button
+              onClick={() => quickLogin('demo')}
+              className="w-full text-left px-3 py-2 rounded text-sm bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors"
+            >
+              🎮 Demo: demo@neuroboost.com / demo123
+            </button>
+          </div>
         </div>
         
         <form className="space-y-6" onSubmit={handleLogin}>

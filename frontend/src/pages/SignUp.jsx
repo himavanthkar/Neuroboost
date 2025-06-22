@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Brain } from 'lucide-react';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebase';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 const SignUp = () => {
   const { darkMode } = useTheme();
+  const { signup } = useAuth();
+  const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -18,8 +19,12 @@ const SignUp = () => {
     setLoading(true);
     setError(null);
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      navigate('/app');
+      const result = await signup(email, password, displayName);
+      if (result.success) {
+        navigate('/app');
+      } else {
+        setError(result.error || 'Sign up failed');
+      }
     } catch (error) {
       setError(error.message);
     } finally {
@@ -44,6 +49,19 @@ const SignUp = () => {
         
         <form className="space-y-6" onSubmit={handleSignUp}>
           <div>
+            <label htmlFor="displayName" className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Display Name</label>
+            <input 
+              id="displayName"
+              name="displayName"
+              type="text" 
+              autoComplete="name" 
+              required 
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`} 
+            />
+          </div>
+          <div>
             <label htmlFor="email" className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Email address</label>
             <input 
               id="email"
@@ -62,7 +80,7 @@ const SignUp = () => {
               id="password"
               name="password"
               type="password" 
-              autoComplete="current-password" 
+              autoComplete="new-password" 
               required 
               value={password}
               onChange={(e) => setPassword(e.target.value)}

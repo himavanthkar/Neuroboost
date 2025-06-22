@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Navigate } from 'react-router-dom';
 import TopNavBar from './components/TopNavBar';
 import Sidebar from './components/Sidebar';
 import DailyPKGSummary from './components/DailyPKGSummary';
@@ -11,22 +12,41 @@ import CalendarView from './components/CalendarView';
 import CBTPomodoroFlow from './components/CBTPomodoroFlow';
 import AnalyticsView from './components/AnalyticsView';
 import SettingsPage from './components/SettingsPage';
+import AdminDashboard from './components/AdminDashboard';
+import TranscribedNotes from './components/TranscribedNotes';
 import { useTheme } from './context/ThemeContext';
+import { useAuth } from './context/AuthContext';
+import SimpleVoiceWidget from './components/SimpleVoiceWidget';
 
 const notificationSound = new Audio('https://orangefreesounds.com/wp-content/uploads/2020/04/Alert-notification.mp3');
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3000';
 
 function MainApp() {
   const { darkMode } = useTheme();
+  const { currentUser } = useAuth();
+
+  // Redirect to login if not authenticated
+  if (!currentUser) {
+    return <Navigate to="/login" replace />;
+  }
+
   const [activeTab, setActiveTab] = useState('dashboard');
   const [mood, setMood] = useState('focused');
   const [profilePic, setProfilePic] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [tasks, setTasks] = useState([
     { id: 1, text: "Complete math assignment", done: true, date: new Date().toISOString().slice(0, 10), completedAt: new Date().toISOString() },
     { id: 2, text: "Review chemistry notes", done: false, date: new Date().toISOString().slice(0, 10), completedAt: null },
     { id: 3, text: "Write history essay outline", done: false, date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10), completedAt: null },
   ]);
   const [totalCompletedTasks, setTotalCompletedTasks] = useState(() => tasks.filter(t => t.done).length);
+
+  // Check if user is admin
+  useEffect(() => {
+    if (currentUser) {
+      setIsAdmin(currentUser.email === 'admin@neuroboost.com');
+    }
+  }, [currentUser]);
 
   // WebSocket connection for real-time updates
   useEffect(() => {
@@ -182,6 +202,17 @@ function MainApp() {
     setCbtTimerActive(true);
   };
 
+  // Global function for voice integration
+  useEffect(() => {
+    window.addTaskToMainApp = (text, date) => {
+      handleAddTask(text, date);
+    };
+    
+    return () => {
+      delete window.addTaskToMainApp;
+    };
+  }, []);
+
   const renderDashboard = () => (
     <div className="p-6 space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -221,7 +252,7 @@ function MainApp() {
           isFullPage={true}
         />;
       case 'notes':
-        return <div className="p-6">Transcribed Notes - Coming Soon</div>;
+        return <TranscribedNotes />;
       case 'calendar':
         return <CalendarView tasks={tasks} />;
       case 'cbt':
@@ -238,6 +269,10 @@ function MainApp() {
         return <AnalyticsView tasks={tasks} />;
       case 'settings':
         return <SettingsPage onProfilePicChange={handleProfilePicChange} profilePic={profilePic}/>;
+      case 'admin':
+        return <AdminDashboard />;
+      case 'voice':
+        return <SimpleVoiceWidget />;
       default:
         return renderDashboard();
     }
@@ -256,6 +291,9 @@ function MainApp() {
           {renderContent()}
         </main>
       </div>
+      
+      {/* Always visible voice assistant */}
+      <SimpleVoiceWidget />
     </div>
   );
 }

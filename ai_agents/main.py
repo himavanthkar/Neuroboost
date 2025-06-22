@@ -28,11 +28,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Redis for real-time mood updates
+# Redis for real-time mood updates (optional for local development)
 redis_host = os.getenv("REDIS_HOST", "localhost")
 redis_port = int(os.getenv("REDIS_PORT", 6379))
 redis_password = os.getenv("REDIS_PASSWORD")
-redis_client = redis.Redis(host=redis_host, port=redis_port, password=redis_password, decode_responses=True)
+
+# Try to connect to Redis, but make it optional
+redis_client = None
+try:
+    redis_client = redis.Redis(host=redis_host, port=redis_port, password=redis_password, decode_responses=True)
+    redis_client.ping()  # Test connection
+    logger.info("Connected to Redis successfully")
+except Exception as e:
+    logger.warning(f"Could not connect to Redis: {e}. Running without real-time updates.")
+    redis_client = None
 
 # Initialize AI Agents
 mood_agent = MoodAgent()
@@ -54,7 +63,8 @@ async def detect_mood(data: dict):
         )
         
         # Broadcast mood change to frontend via Redis
-        redis_client.publish("mood_updates", json.dumps(mood_data))
+        if redis_client:
+            redis_client.publish("mood_updates", json.dumps(mood_data))
         
         return {"mood": mood_data, "theme_updated": True}
     except Exception as e:
@@ -67,7 +77,8 @@ async def voice_to_tasks(data: dict):
         tasks = task_agent.voice_to_task(data["transcript"])
 
         # After creating tasks, publish an event to notify the frontend
-        redis_client.publish("task_updates", json.dumps({"event": "tasks_updated", "tasks": tasks}))
+        if redis_client:
+            redis_client.publish("task_updates", json.dumps({"event": "tasks_updated", "tasks": tasks}))
         
         return {"tasks": tasks, "source": "voice"}
     except Exception as e:
@@ -103,7 +114,8 @@ async def add_task(data: dict):
         }
         
         # Publish the update to Redis
-        redis_client.publish("task_updates", json.dumps({"event": "task_added", "tasks": task_update_payload}))
+        if redis_client:
+            redis_client.publish("task_updates", json.dumps({"event": "task_added", "tasks": task_update_payload}))
         
         return {"success": True, "message": f"Successfully added '{task_text}' to {day}", "task": new_task}
     except Exception as e:
@@ -124,7 +136,8 @@ async def remove_task(data: dict):
         # Here you would delete the task from the database
         
         # Then notify the frontend
-        redis_client.publish("task_updates", json.dumps({"event": "task_removed", "taskId": task_id_to_remove}))
+        if redis_client:
+            redis_client.publish("task_updates", json.dumps({"event": "task_removed", "taskId": task_id_to_remove}))
         
         return {"success": True, "message": "Task removal processed."}
     except Exception as e:
@@ -151,6 +164,76 @@ async def get_motivation(data: dict):
         return {"motivation": motivation, "personalized": True}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/mood/update")
+async def update_mood(data: dict):
+    """Update mood from voice command"""
+    try:
+        mood = data.get("mood")
+        source = data.get("source", "manual")
+        timestamp = data.get("timestamp", datetime.now().isoformat())
+        
+        # Store mood data
+        mood_data = {
+            "mood": mood,
+            "source": source,
+            "timestamp": timestamp,
+            "confidence": 0.9  # High confidence for manual updates
+        }
+        
+        # Broadcast to frontend if Redis available
+        if redis_client:
+            redis_client.publish("mood_updates", json.dumps(mood_data))
+        
+        return {"success": True, "mood": mood_data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/analyze/productivity")
+async def analyze_productivity(data: dict):
+    """Analyze productivity and provide suggestions"""
+    try:
+        tasks = data.get("tasks", [])
+        current_mood = data.get("currentMood", "neutral")
+        
+        # Use task agent to analyze productivity
+        analysis = task_agent.analyze_productivity(tasks, current_mood)
+        
+        return {
+            "success": True,
+            "analysis": analysis,
+            "suggestion": analysis.get("suggestion", "Keep up the great work! Focus on completing your highest priority tasks."),
+            "productivity_score": analysis.get("score", 75)
+        }
+    except Exception as e:
+        logger.error(f"Error analyzing productivity: {e}")
+        return {
+            "success": True,
+            "suggestion": "Based on your current tasks, I recommend taking a short break and then focusing on your most important task.",
+            "productivity_score": 70
+        }
+
+@app.post("/process/general")
+async def process_general_query(data: dict):
+    """Process general voice queries with AI"""
+    try:
+        query = data.get("query", "")
+        
+        # Use motivate agent for general conversation
+        response = motivate_agent.process_general_query(query)
+        
+        return {
+            "success": True,
+            "response": response,
+            "query": query
+        }
+    except Exception as e:
+        logger.error(f"Error processing general query: {e}")
+        return {
+            "success": True,
+            "response": "I understand you're trying to communicate with me. You can ask me to add tasks, change your mood, or analyze your productivity.",
+            "query": query
+        }
 
 if __name__ == "__main__":
     import uvicorn

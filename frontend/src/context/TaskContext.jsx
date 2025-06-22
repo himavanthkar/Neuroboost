@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useCallback } from 'react';
 
 const TaskContext = createContext();
-const VOICE_SERVICE_URL = import.meta.env.VITE_VOICE_SERVICE_URL || 'http://localhost:8000';
+const VOICE_SERVICE_URL = import.meta.env.VITE_VOICE_SERVICE_URL || 'http://localhost:8002';
 
 export const useTasks = () => useContext(TaskContext);
 
