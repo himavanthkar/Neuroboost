@@ -1,7 +1,7 @@
 import React from 'react';
-import { Mic, Palette, Settings, Sun, Moon, User } from 'lucide-react';
+import { Mic, Settings, Sun, Moon, User } from 'lucide-react';
 
-const TopNavBar = ({ mood, theme, onThemeToggle, onTabChange }) => {
+const TopNavBar = ({ mood, theme, onThemeToggle, onTabChange, profilePic }) => {
   const getMoodRingColor = (mood) => {
     const colors = {
       happy: 'ring-green-400',
@@ -26,12 +26,17 @@ const TopNavBar = ({ mood, theme, onThemeToggle, onTabChange }) => {
         <button onClick={onThemeToggle} className={`p-2 rounded-lg hover:bg-opacity-80 transition-colors ${theme === 'dark' ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-100'}`}>
           {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </button>
-        <button className={`p-2 rounded-lg hover:bg-opacity-80 transition-colors ${theme === 'dark' ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-100'}`}><Palette className="w-5 h-5" /></button>
-        <button className={`p-2 rounded-lg hover:bg-opacity-80 transition-colors ${theme === 'dark' ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-100'}`}><Settings className="w-5 h-5" /></button>
+        <button onClick={() => onTabChange('settings')} className={`p-2 rounded-lg hover:bg-opacity-80 transition-colors ${theme === 'dark' ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-100'}`}>
+          <Settings className="w-5 h-5" />
+        </button>
         <div className={`relative p-1 rounded-full ring-2 ${getMoodRingColor(mood)}`}>
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'}`}>
-            <User className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`} />
-          </div>
+          {profilePic ? (
+            <img src={profilePic} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
+          ) : (
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'}`}>
+              <User className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`} />
+            </div>
+          )}
         </div>
       </div>
     </nav>

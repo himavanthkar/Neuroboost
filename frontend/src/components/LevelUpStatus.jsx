@@ -15,6 +15,9 @@ const LevelUpStatus = ({ theme, xp, isFullPage = false }) => {
   const currentEvolution = [...evolutions].reverse().find(evo => xp >= evo.xpThreshold);
   const nextEvolutionIndex = evolutions.findIndex(evo => evo.name === currentEvolution.name) + 1;
   const nextEvolution = evolutions[nextEvolutionIndex];
+  
+  const currentEvolutionIndex = evolutions.findIndex(evo => evo.name === currentEvolution.name);
+  const previousEvolutions = evolutions.slice(0, currentEvolutionIndex);
 
   let progressPercent = 100;
   let xpForNextLevel = 'Max';
@@ -66,6 +69,30 @@ const LevelUpStatus = ({ theme, xp, isFullPage = false }) => {
         <div className={`p-6 rounded-lg shadow-lg ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
           {content}
         </div>
+        
+        {previousEvolutions.length > 0 && (
+          <div className="mt-8">
+            <h3 className={`text-2xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+              Evolution History
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {previousEvolutions.map(evo => (
+                <div 
+                  key={evo.name}
+                  className={`p-4 rounded-lg text-center transition-opacity ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} opacity-60 hover:opacity-100`}
+                >
+                  <img 
+                    src={evo.image} 
+                    alt={evo.name} 
+                    className="w-24 h-24 object-contain mx-auto mb-2"
+                  />
+                  <p className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{evo.name}</p>
+                  <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Lvl {evo.level}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     );
   }

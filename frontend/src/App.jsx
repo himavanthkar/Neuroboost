@@ -10,6 +10,7 @@ import LevelUpStatus from './components/LevelUpStatus';
 import CalendarView from './components/CalendarView';
 import CBTPomodoroFlow from './components/CBTPomodoroFlow';
 import AnalyticsView from './components/AnalyticsView';
+import SettingsPage from './components/SettingsPage';
 
 const notificationSound = new Audio('https://orangefreesounds.com/wp-content/uploads/2020/04/Alert-notification.mp3');
 
@@ -17,6 +18,7 @@ function App() {
   const [theme, setTheme] = useState('light');
   const [activeTab, setActiveTab] = useState('dashboard');
   const [mood, setMood] = useState('focused');
+  const [profilePic, setProfilePic] = useState(null);
   const [tasks, setTasks] = useState([
     { id: 1, text: "Complete math assignment", done: true, date: new Date().toISOString().slice(0, 10), completedAt: new Date().toISOString() },
     { id: 2, text: "Review chemistry notes", done: false, date: new Date().toISOString().slice(0, 10), completedAt: null },
@@ -28,6 +30,10 @@ function App() {
   const [cbtMode, setCbtMode] = useState(true);
   const [cbtTimeLeft, setCbtTimeLeft] = useState(15 * 60);
   const [cbtTimerActive, setCbtTimerActive] = useState(false);
+
+  const handleProfilePicChange = (newPic) => {
+    setProfilePic(newPic);
+  };
 
   // CBT Timer effect
   useEffect(() => {
@@ -193,6 +199,13 @@ function App() {
         />;
       case 'analytics':
         return <AnalyticsView theme={theme} tasks={tasks} />;
+      case 'settings':
+        return <SettingsPage 
+          theme={theme} 
+          onThemeToggle={handleThemeToggle} 
+          profilePic={profilePic}
+          onProfilePicChange={handleProfilePicChange}
+        />;
       default:
         return renderDashboard();
     }
@@ -205,6 +218,7 @@ function App() {
         theme={theme} 
         onThemeToggle={handleThemeToggle} 
         onTabChange={handleTabChange}
+        profilePic={profilePic}
       />
       <div className="flex">
         <Sidebar 

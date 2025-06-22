@@ -1,19 +1,19 @@
 import React from 'react';
-import { FileText, CheckSquare, Calendar, Brain, BarChart3, Trophy } from 'lucide-react';
+import { LayoutDashboard, ListTodo, Calendar, BrainCircuit, BarChart2, Gem, FileText } from 'lucide-react';
 
 const Sidebar = ({ activeTab, onTabChange, theme }) => {
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'notes', label: 'Transcribed Notes', icon: FileText },
-    { id: 'tasks', label: 'Tasks', icon: CheckSquare },
+    { id: 'tasks', label: 'Tasks', icon: ListTodo },
     { id: 'calendar', label: 'Calendar', icon: Calendar },
-    { id: 'cbt', label: 'CBT (Therapy)', icon: Brain },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'gamification', label: 'Level Up', icon: Trophy }
+    { id: 'cbt', label: 'CBT (Therapy)', icon: BrainCircuit },
+    { id: 'analytics', label: 'Analytics', icon: BarChart2 },
+    { id: 'gamification', label: 'Level Up', icon: Gem },
   ];
 
   return (
-    <aside className={`w-64 ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-r min-h-screen p-4`}>
+    <aside className={`w-64 h-screen p-4 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
       <nav className="space-y-2">
         {navItems.map((item) => {
           const Icon = item.icon;
