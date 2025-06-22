@@ -14,8 +14,10 @@ app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 // --- Routes ---
 const authRoutes = require('./src/routes/auth');
 const taskRoutes = require('./src/routes/tasks');
+const aiRoutes = require('./src/routes/ai');
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/ai', aiRoutes);
 
 // --- Basic Route ---
 app.get('/', (req, res) => {
