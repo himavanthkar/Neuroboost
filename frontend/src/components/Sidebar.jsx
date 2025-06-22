@@ -3,12 +3,13 @@ import { FileText, CheckSquare, Calendar, Brain, BarChart3, Trophy } from 'lucid
 
 const Sidebar = ({ activeTab, onTabChange, theme }) => {
   const navItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'notes', label: 'Transcribed Notes', icon: FileText },
     { id: 'tasks', label: 'Tasks', icon: CheckSquare },
     { id: 'calendar', label: 'Calendar', icon: Calendar },
     { id: 'cbt', label: 'CBT (Therapy)', icon: Brain },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'gamification', label: 'Gamification', icon: Trophy }
+    { id: 'gamification', label: 'Level Up', icon: Trophy }
   ];
 
   return (
@@ -36,4 +37,4 @@ const Sidebar = ({ activeTab, onTabChange, theme }) => {
   );
 };
 
-export default Sidebar; 
+export default Sidebar;
