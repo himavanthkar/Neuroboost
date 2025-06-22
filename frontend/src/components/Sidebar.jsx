@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, ListTodo, Calendar, BrainCircuit, BarChart2, Gem, FileText, Shield } from 'lucide-react';
+import { LayoutDashboard, ListTodo, Calendar, BrainCircuit, BarChart2, Gem, FileText, Shield, Heart, Brain } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -17,6 +17,8 @@ const Sidebar = ({ activeTab, onTabChange }) => {
     { id: 'cbt', label: 'CBT (Therapy)', icon: BrainCircuit },
     { id: 'analytics', label: 'Analytics', icon: BarChart2 },
     { id: 'gamification', label: 'Level Up', icon: Gem },
+    { id: 'diagram-day', label: 'Diagram Day', icon: Heart },
+    { id: 'brain-state', label: 'Brain State Prediction', icon: Brain },
     ...(isAdmin ? [{ id: 'admin', label: 'Admin Dashboard', icon: Shield }] : [])
   ];
 

@@ -14,6 +14,8 @@ import AnalyticsView from './components/AnalyticsView';
 import SettingsPage from './components/SettingsPage';
 import AdminDashboard from './components/AdminDashboard';
 import TranscribedNotes from './components/TranscribedNotes';
+import DiagramDay from './components/DiagramDay';
+import BrainStatePrediction from './components/BrainStatePrediction';
 import { useTheme } from './context/ThemeContext';
 import { useAuth } from './context/AuthContext';
 import SimpleVoiceWidget from './components/SimpleVoiceWidget';
@@ -578,6 +580,10 @@ function MainApp() {
         return <AdminDashboard />;
       case 'voice':
         return <SimpleVoiceWidget />;
+      case 'diagram-day':
+        return <DiagramDay tasks={tasks} />;
+      case 'brain-state':
+        return <BrainStatePrediction />;
       default:
         return renderDashboard();
     }
