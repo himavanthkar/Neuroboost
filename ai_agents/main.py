@@ -23,7 +23,10 @@ app.add_middleware(
 )
 
 # Redis for real-time mood updates
-redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
+redis_host = os.getenv("REDIS_HOST", "localhost")
+redis_port = int(os.getenv("REDIS_PORT", 6379))
+redis_password = os.getenv("REDIS_PASSWORD")
+redis_client = redis.Redis(host=redis_host, port=redis_port, password=redis_password)
 
 # Initialize AI Agents
 mood_agent = MoodAgent()

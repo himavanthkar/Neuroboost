@@ -146,8 +146,16 @@ class MoodAgent:
                 messages=[{"role": "user", "content": prompt}]
             )
             
-            # Parse Claude's response
-            result = json.loads(response.content[0].text)
+            # Safely extract and parse Claude's response
+            text_content = ""
+            for block in response.content:
+                if block.type == "text":
+                    text_content += block.text
+            
+            if not text_content:
+                raise ValueError("No text content found in the AI response.")
+
+            result = json.loads(text_content)
             return result
             
         except Exception as e:

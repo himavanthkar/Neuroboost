@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Database Services
   db:
@@ -63,7 +61,7 @@ services:
   # AI Agents Service
   ai-agents:
     build:
-      context: ./ai-agents
+      context: ./ai_agents
       dockerfile: Dockerfile
     ports:
       - "${AI_AGENTS_PORT}:8000"
@@ -87,7 +85,7 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./ai-agents:/app
+      - ./ai_agents:/app
       - ./shared:/app/shared
     command: python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
@@ -175,7 +173,7 @@ services:
       - "${FRONTEND_PORT}:8080"
     environment:
       - NODE_ENV=${NODE_ENV}
-      - REACT_APP_API_URL=http://localhost:${API_GATEWAY_PORT}
+      - REACT_APP_API_URL=http://api-gateway:3000
     volumes:
       - ./frontend:/app
       - /app/node_modules

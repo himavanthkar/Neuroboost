@@ -1,11 +1,11 @@
 import os
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 class MotivateAgent:
     def __init__(self):
         self.letta_api_key = os.getenv("LETTA_API_KEY")
     
-    def get_personalized_motivation(self, user_id: str, current_mood: str = None, recent_tasks: List = None) -> Dict:
+    def get_personalized_motivation(self, user_id: str, current_mood: Optional[str] = None, recent_tasks: Optional[List] = None) -> Dict:
         """Get personalized ADHD motivation using Letta memory"""
         
         # ADHD-specific motivational messages
@@ -20,8 +20,13 @@ class MotivateAgent:
         
         default_motivation = "Every step forward is progress. You're doing better than you think! ✨"
         
+        # Safely get the motivation message
+        message = default_motivation
+        if current_mood in motivation_by_mood:
+            message = motivation_by_mood[current_mood]
+            
         return {
-            "message": motivation_by_mood.get(current_mood, default_motivation),
+            "message": message,
             "personalized": True,
             "adhd_tip": "Remember: Progress, not perfection!",
             "energy_boost": True

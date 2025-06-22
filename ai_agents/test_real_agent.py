@@ -5,11 +5,16 @@
 
 import os
 import sys
+from dotenv import load_dotenv
 
-# Set your real API keys
-os.environ['ANTHROPIC_API_KEY'] = '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'
-os.environ['GROQ_API_KEY'] = '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'
-os.environ['LETTA_API_KEY'] = 'sk-let-YWM5NzJjMGMtMTRmYy00NTkyLTliMDMtN2I2YWVlYWY3MTFkOjkyNDJiODUyLWIyMGEtNGU3NC1hMmY1LWQwYjBlNTdjNDljNQ=='
+# Load environment variables from .env file
+load_dotenv()
+
+# Check if keys are loaded
+if not os.getenv("ANTHROPIC_API_KEY") or not os.getenv("GROQ_API_KEY"):
+    print("❌ Critical Error: ANTHROPIC_API_KEY or GROQ_API_KEY not found.")
+    print("   Please ensure they are set in your .env file.")
+    sys.exit(1)
 
 print("🚀 Testing REAL AI Agents with Your API Keys...")
 print("=" * 60)
@@ -38,7 +43,14 @@ try:
     )
     
     print(f"   Input: '{test_message[:50]}...'")
-    print(f"   Claude Response: {message.content[0].text[:100]}...")
+
+    # Safely extract text from the response
+    text_content = ""
+    for block in message.content:
+        if block.type == "text":
+            text_content += block.text
+    
+    print(f"   Claude Response: {text_content[:100]}...")
     print("   ✅ Claude API working! ($2,500 prize target)")
     
 except Exception as e:
@@ -62,7 +74,8 @@ try:
         model="llama3-8b-8192",
     )
     
-    print(f"   Focus Analysis: {chat_completion.choices[0].message.content[:80]}...")
+    response_content = chat_completion.choices[0].message.content
+    print(f"   Focus Analysis: {response_content[:80] if response_content else 'No content returned'}...")
     print("   ✅ Groq API working! ($500 prize target)")
     
 except Exception as e:
