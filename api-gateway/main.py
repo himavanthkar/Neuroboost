@@ -1,6 +1,15 @@
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
-from ai_agents.task_agent import TaskAgent
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+from ai_agents.agents.task_agent import TaskAgent
 import json
 import logging
 from typing import Dict, Any
@@ -68,8 +77,7 @@ async def handle_transcript_final(message: Dict[str, Any]):
     
     try:
         # Process the transcript using our agent
-        extracted_data_str = task_agent.process_transcript(transcript)
-        extracted_data = json.loads(extracted_data_str)
+        extracted_data = task_agent.voice_to_task(transcript)
         logger.info(f"TaskAgent extracted: {extracted_data}")
         
         # Vapi doesn't require a specific response for this webhook,
@@ -135,8 +143,7 @@ async def test_agent(request: Request):
         if not transcript:
             raise HTTPException(status_code=400, detail="No transcript provided")
         
-        result_str = task_agent.process_transcript(transcript)
-        parsed_result = json.loads(result_str)
+        parsed_result = task_agent.voice_to_task(transcript)
         
         return {
             "status": "success",

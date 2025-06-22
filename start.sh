@@ -40,4 +40,12 @@ echo "🗄️  Database:"
 echo "   PostgreSQL:      localhost:5432"
 echo "   Redis:           localhost:6379"
 echo ""
-echo "Press Ctrl+C to stop all services" 
+echo "Press Ctrl+C to stop all services"
+
+# Set PYTHONPATH to include the project root directory.
+# This ensures that all modules can be found by Python.
+export PYTHONPATH=.
+
+# Activate the virtual environment and run the server.
+# Using python -m ensures that uvicorn is run from the venv.
+venv/bin/python -m uvicorn api-gateway.main:app --reload --port 8000 
