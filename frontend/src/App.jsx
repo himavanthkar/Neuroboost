@@ -9,6 +9,7 @@ import WeeklyTasksView from './components/WeeklyTasksView';
 import LevelUpStatus from './components/LevelUpStatus';
 import CalendarView from './components/CalendarView';
 import CBTPomodoroFlow from './components/CBTPomodoroFlow';
+import AnalyticsView from './components/AnalyticsView';
 
 const notificationSound = new Audio('https://orangefreesounds.com/wp-content/uploads/2020/04/Alert-notification.mp3');
 
@@ -17,9 +18,9 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [mood, setMood] = useState('focused');
   const [tasks, setTasks] = useState([
-    { id: 1, text: "Complete math assignment", done: true, date: new Date().toISOString().slice(0, 10) },
-    { id: 2, text: "Review chemistry notes", done: false, date: new Date().toISOString().slice(0, 10) },
-    { id: 3, text: "Write history essay outline", done: false, date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10) },
+    { id: 1, text: "Complete math assignment", done: true, date: new Date().toISOString().slice(0, 10), completedAt: new Date().toISOString() },
+    { id: 2, text: "Review chemistry notes", done: false, date: new Date().toISOString().slice(0, 10), completedAt: null },
+    { id: 3, text: "Write history essay outline", done: false, date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10), completedAt: null },
   ]);
   const [totalCompletedTasks, setTotalCompletedTasks] = useState(() => tasks.filter(t => t.done).length);
 
@@ -61,14 +62,28 @@ function App() {
   };
 
   const handleToggleTask = (id) => {
-    const taskToToggle = tasks.find(task => task.id === id);
-    if (taskToToggle && !taskToToggle.done) {
+    let taskCompleted = false;
+    setTasks(tasks.map(task => {
+      if (task.id === id) {
+        const isNowDone = !task.done;
+        if (isNowDone) {
+          taskCompleted = true;
+        }
+        return { ...task, done: isNowDone, completedAt: isNowDone ? new Date().toISOString() : null };
+      }
+      return task;
+    }));
+
+    if (taskCompleted) {
       setTotalCompletedTasks(prevCount => prevCount + 1);
+    } else {
+      // If a task is unchecked, we might need to decrease the total count
+      // This logic assumes unchecking a completed task reduces the count.
+      const taskWasDone = tasks.find(t => t.id === id)?.done;
+      if (taskWasDone) {
+        setTotalCompletedTasks(prevCount => Math.max(0, prevCount - 1));
+      }
     }
-    
-    setTasks(tasks.map(task => 
-      task.id === id ? { ...task, done: !task.done } : task
-    ));
   };
 
   const handleAddTask = (text, date) => {
@@ -77,7 +92,8 @@ function App() {
         id: Date.now(),
         text,
         done: false,
-        date
+        date,
+        completedAt: null
     };
     setTasks([...tasks, newTask]);
   };
@@ -176,7 +192,7 @@ function App() {
           skipToPlayZone={skipToPlayZone}
         />;
       case 'analytics':
-        return <div className="p-6">Analytics Dashboard - Coming Soon</div>;
+        return <AnalyticsView theme={theme} tasks={tasks} />;
       default:
         return renderDashboard();
     }
