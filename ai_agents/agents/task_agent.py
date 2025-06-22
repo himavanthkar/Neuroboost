@@ -25,9 +25,16 @@ class TaskAgent:
     
     def _get_anthropic_client(self):
         if not self.anthropic_client:
-            self.anthropic_client = anthropic.Anthropic(
-                api_key=os.getenv("ANTHROPIC_API_KEY")
-            )
+            api_key = os.getenv("ANTHROPIC_API_KEY")
+            if api_key:
+                try:
+                    self.anthropic_client = anthropic.Anthropic(api_key=api_key)
+                except Exception as e:
+                    print(f"Failed to initialize Anthropic client: {e}")
+                    return None
+            else:
+                print("ANTHROPIC_API_KEY not found, using fallback mode")
+                return None
         return self.anthropic_client
     
     def map_day_to_date(self, day_string: str) -> str:
@@ -60,6 +67,11 @@ class TaskAgent:
         """
         try:
             client = self._get_anthropic_client()
+            
+            # If no client available, use fallback
+            if not client:
+                return self._fallback_task_creation(transcript)
+                
             # Use Claude 4 for intelligent task parsing
             prompt = f"""
             You are an ADHD productivity assistant. Convert this voice input into structured tasks.
@@ -141,6 +153,11 @@ class TaskAgent:
         """
         try:
             client = self._get_anthropic_client()
+            
+            # If no client available, return default ordering
+            if not client:
+                return {"prioritized_tasks": tasks, "adhd_strategy": "Default ordering"}
+                
             prompt = f"""
             Reorder these tasks for someone with ADHD based on optimal productivity patterns:
             
@@ -204,6 +221,11 @@ class TaskAgent:
         """
         try:
             client = self._get_anthropic_client()
+            
+            # If no client available, return simple breakdown
+            if not client:
+                return {"micro_tasks": [task], "adhd_benefits": "Simple breakdown due to missing API"}
+                
             prompt = f"""
             Break down this complex task into ADHD-friendly micro-tasks:
             

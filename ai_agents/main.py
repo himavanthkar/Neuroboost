@@ -1,10 +1,15 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import os
+import sys
 from dotenv import load_dotenv
 import redis
 import json
 import logging
+
+# Add current directory to Python path for imports
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from agents.mood_agent import MoodAgent
 from agents.task_agent import TaskAgent
 from agents.focus_agent import FocusAgent
@@ -234,6 +239,17 @@ async def process_general_query(data: dict):
             "response": "I understand you're trying to communicate with me. You can ask me to add tasks, change your mood, or analyze your productivity.",
             "query": query
         }
+
+@app.get("/debug/voice-notes")
+async def debug_voice_notes():
+    """Debug endpoint to return all voice notes (dummy data if DB not available)"""
+    # TODO: Replace with real DB query if/when available
+    dummy_notes = [
+        {"id": 1, "user_id": "demo", "transcript": "Buy groceries", "timestamp": "2024-06-22T10:00:00Z"},
+        {"id": 2, "user_id": "demo", "transcript": "Call Dr. Smith", "timestamp": "2024-06-22T11:00:00Z"},
+        {"id": 3, "user_id": "admin", "transcript": "Schedule meeting", "timestamp": "2024-06-22T12:00:00Z"}
+    ]
+    return {"voice_notes": dummy_notes}
 
 if __name__ == "__main__":
     import uvicorn

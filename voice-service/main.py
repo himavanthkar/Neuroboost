@@ -27,7 +27,7 @@ app.add_middleware(
 )
 
 # Configuration
-AI_AGENTS_URL = os.getenv("AI_AGENTS_URL", "http://localhost:8001")  # Updated default
+AI_AGENTS_URL = os.getenv("AI_AGENTS_URL", "http://localhost:8000")  # Fixed port to 8000
 VAPI_WEBHOOK_SECRET = os.getenv("VAPI_WEBHOOK_SECRET")
 
 # --- Pydantic Models ---

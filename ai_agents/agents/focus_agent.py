@@ -4,7 +4,14 @@ from typing import Dict
 
 class FocusAgent:
     def __init__(self):
-        self.groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        api_key = os.getenv("GROQ_API_KEY")
+        self.groq_client = None
+        if api_key:
+            try:
+                self.groq_client = Groq(api_key=api_key)
+            except Exception as e:
+                print(f"Failed to initialize Groq client: {e}")
+                self.groq_client = None
     
     def analyze_focus_level(self, data: Dict) -> Dict:
         """Analyze focus level using Groq for real-time processing"""

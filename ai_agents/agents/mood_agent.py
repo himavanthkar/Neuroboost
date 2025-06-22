@@ -14,12 +14,23 @@ class MoodAgent:
     """
     
     def __init__(self):
-        self.anthropic_client = anthropic.Anthropic(
-            api_key=os.getenv("ANTHROPIC_API_KEY")
-        )
-        self.groq_client = Groq(
-            api_key=os.getenv("GROQ_API_KEY")
-        )
+        anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+        groq_key = os.getenv("GROQ_API_KEY")
+        
+        self.anthropic_client = None
+        self.groq_client = None
+        
+        if anthropic_key:
+            try:
+                self.anthropic_client = anthropic.Anthropic(api_key=anthropic_key)
+            except Exception as e:
+                print(f"Failed to initialize Anthropic client: {e}")
+        
+        if groq_key:
+            try:
+                self.groq_client = Groq(api_key=groq_key)
+            except Exception as e:
+                print(f"Failed to initialize Groq client: {e}")
         
         # ADHD-specific mood patterns
         self.adhd_mood_patterns = {
@@ -124,6 +135,21 @@ class MoodAgent:
     def _analyze_text_mood(self, text: str) -> Dict:
         """Analyze mood from text using Claude 4"""
         try:
+            # Check if Anthropic client is available
+            if not self.anthropic_client:
+                # Fallback to simple keyword-based analysis
+                text_lower = text.lower()
+                if any(word in text_lower for word in ["tired", "exhausted", "sleepy"]):
+                    return {"primary_mood": "tired", "confidence": 0.7}
+                elif any(word in text_lower for word in ["overwhelmed", "stressed", "too much"]):
+                    return {"primary_mood": "overwhelmed", "confidence": 0.7}
+                elif any(word in text_lower for word in ["energetic", "excited", "ready"]):
+                    return {"primary_mood": "energetic", "confidence": 0.7}
+                elif any(word in text_lower for word in ["focused", "concentrated", "in the zone"]):
+                    return {"primary_mood": "focused", "confidence": 0.7}
+                else:
+                    return {"primary_mood": "neutral", "confidence": 0.5}
+            
             prompt = f"""
             Analyze the emotional state of someone with ADHD from this text: "{text}"
             
