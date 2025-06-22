@@ -55,7 +55,7 @@ const DayColumn = ({ theme, day, tasks, onToggle, onDelete, onAdd }) => {
   );
 };
 
-const WeeklyTasksView = ({ theme, tasks, onToggle, onDelete, onAdd }) => {
+const WeeklyTasksView = ({ theme, tasks, onToggle, onDelete, onAdd, onClearAll }) => {
   const [showCalendar, setShowCalendar] = useState(false);
 
   const noTasks = tasks.length === 0;
@@ -74,7 +74,7 @@ const WeeklyTasksView = ({ theme, tasks, onToggle, onDelete, onAdd }) => {
   const days = Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i));
 
   const renderSlothView = () => (
-    <div className={`text-center p-8 rounded-lg mb-4 ${theme === 'dark' ? 'bg-gray-800' : 'bg-gray-100'}`}>
+    <div className={`text-center p-8 rounded-lg mb-4 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
         <img src={slothImage} alt="Sleeping sloth" className="mx-auto mb-4 w-48" />
         <p className={`text-lg mb-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
             {noTasks ? "No tasks for this week. Add one to get started!" : "Assignments are all completed"}
@@ -90,9 +90,20 @@ const WeeklyTasksView = ({ theme, tasks, onToggle, onDelete, onAdd }) => {
 
   return (
       <div className="p-6">
-          <h2 className={`text-2xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-              This Week's Tasks
-          </h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                This Week's Tasks
+            </h2>
+            {!noTasks && (
+              <button
+                onClick={onClearAll}
+                className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm font-medium flex items-center space-x-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Clear All</span>
+              </button>
+            )}
+          </div>
 
           {(noTasks || allTasksCompleted) && !showCalendar ? renderSlothView() : (
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">

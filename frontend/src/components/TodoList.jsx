@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import DashboardCard from './DashboardCard';
 import { Trash2 } from 'lucide-react';
 
-const TodoList = ({ theme, tasks, onToggle, onDelete, onAdd }) => {
+const TodoList = ({ theme, tasks, onToggle, onDelete, onAdd, onClear, className = "" }) => {
   const [newTaskText, setNewTaskText] = useState('');
 
   const handleAddTask = (e) => {
@@ -15,7 +15,26 @@ const TodoList = ({ theme, tasks, onToggle, onDelete, onAdd }) => {
   const progressPercent = tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0;
 
   return (
-    <DashboardCard title="Today's Tasks" theme={theme}>
+    <DashboardCard 
+      title="Today's Tasks" 
+      theme={theme} 
+      className={className}
+      headerContent={
+        tasks.length > 0 && (
+          <button
+            onClick={onClear}
+            className={`px-2 py-1 text-xs rounded-md flex items-center space-x-1 ${
+              theme === 'dark' 
+                ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                : 'bg-gray-200 hover:bg-gray-300 text-gray-600'
+            }`}
+          >
+            <Trash2 className="w-3 h-3" />
+            <span>Clear</span>
+          </button>
+        )
+      }
+    >
       {tasks.length > 0 && (
         <div className="mb-4">
           <div className="flex justify-between items-center mb-2">
