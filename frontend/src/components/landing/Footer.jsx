@@ -1,7 +1,9 @@
 import React from 'react';
 import { Brain } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
-const Footer = ({ darkMode }) => {
+const Footer = () => {
+  const { darkMode } = useTheme();
   return (
     <footer className={`border-t py-12 px-4 sm:px-6 lg:px-8 ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'}`}>
       <div className="max-w-7xl mx-auto">

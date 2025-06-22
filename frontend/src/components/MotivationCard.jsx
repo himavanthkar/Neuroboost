@@ -1,7 +1,9 @@
 import React from 'react';
 import DashboardCard from './DashboardCard';
+import { useTheme } from '../context/ThemeContext';
 
-const MotivationCard = ({ mood, theme }) => {
+const MotivationCard = ({ mood }) => {
+  const { darkMode } = useTheme();
   const quotes = {
     happy: "Your positive energy is contagious! Keep spreading those good vibes! ✨",
     focused: "You're in the zone! This is your superpower moment! 🎯",
@@ -19,14 +21,14 @@ const MotivationCard = ({ mood, theme }) => {
   };
 
   return (
-    <DashboardCard title="Daily Motivation" theme={theme}>
+    <DashboardCard title="Daily Motivation">
       <div className="text-center space-y-4">
         <div className="text-4xl">{moodEmojis[mood] || "😊"}</div>
-        <p className={`text-lg ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+        <p className={`text-lg ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
           {quotes[mood] || quotes.happy}
         </p>
         <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-          theme === 'dark' ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+          darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
         }`}>
           Current Mood: {mood || 'happy'}
         </div>

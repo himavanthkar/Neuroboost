@@ -1,7 +1,9 @@
 import React from 'react';
 import { ArrowRight, CheckCircle } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
-const CTASection = ({ darkMode }) => {
+const CTASection = () => {
+  const { darkMode } = useTheme();
   return (
     <section className={`py-20 px-4 sm:px-6 lg:px-8 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
       <div className="max-w-4xl mx-auto text-center">

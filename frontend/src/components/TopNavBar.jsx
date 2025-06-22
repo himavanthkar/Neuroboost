@@ -1,7 +1,20 @@
 import React from 'react';
-import { Mic, Settings, Sun, Moon, User } from 'lucide-react';
+import { Mic, Settings, Sun, Moon, User, LogOut } from 'lucide-react';
+import { auth } from '../firebase';
+import { useNavigate } from 'react-router-dom';
 
 const TopNavBar = ({ mood, theme, onThemeToggle, onTabChange, profilePic }) => {
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    try {
+      await auth.signOut();
+      navigate('/login');
+    } catch (error) {
+      console.error('Failed to sign out', error);
+    }
+  };
+
   const getMoodRingColor = (mood) => {
     const colors = {
       happy: 'ring-green-400',
@@ -28,6 +41,9 @@ const TopNavBar = ({ mood, theme, onThemeToggle, onTabChange, profilePic }) => {
         </button>
         <button onClick={() => onTabChange('settings')} className={`p-2 rounded-lg hover:bg-opacity-80 transition-colors ${theme === 'dark' ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-100'}`}>
           <Settings className="w-5 h-5" />
+        </button>
+        <button onClick={handleSignOut} className={`p-2 rounded-lg hover:bg-opacity-80 transition-colors ${theme === 'dark' ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-100'}`}>
+          <LogOut className="w-5 h-5" />
         </button>
         <div className={`relative p-1 rounded-full ring-2 ${getMoodRingColor(mood)}`}>
           {profilePic ? (

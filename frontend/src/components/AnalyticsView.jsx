@@ -2,15 +2,19 @@ import React from 'react';
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { differenceInCalendarDays, parseISO, startOfDay, getHours } from 'date-fns';
+import { useTheme } from '../context/ThemeContext';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-const AnalyticsCard = ({ title, value, theme }) => (
-  <div className={`p-6 rounded-lg shadow-md ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
-    <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{title}</h3>
-    <p className={`text-3xl font-bold mt-2 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{value}</p>
-  </div>
-);
+const AnalyticsCard = ({ title, value }) => {
+  const { darkMode } = useTheme();
+  return (
+    <div className={`p-6 rounded-lg shadow-md ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+      <h3 className={`text-lg font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{title}</h3>
+      <p className={`text-3xl font-bold mt-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>{value}</p>
+    </div>
+  );
+};
 
 const calculateStreak = (tasks) => {
   const completedDates = tasks
@@ -56,7 +60,8 @@ const getProductivityByHour = (tasks) => {
   return hours;
 };
 
-const AnalyticsView = ({ theme, tasks }) => {
+const AnalyticsView = ({ tasks }) => {
+  const { darkMode } = useTheme();
   const totalCompleted = tasks.filter(task => task.done).length;
   const streak = calculateStreak(tasks);
   const productivityByHour = getProductivityByHour(tasks);
@@ -69,8 +74,8 @@ const AnalyticsView = ({ theme, tasks }) => {
       {
         label: 'Tasks Completed',
         data: productivityByHour,
-        backgroundColor: theme === 'dark' ? 'rgba(59, 130, 246, 0.5)' : 'rgba(59, 130, 246, 0.7)',
-        borderColor: theme === 'dark' ? 'rgba(59, 130, 246, 1)' : 'rgba(59, 130, 246, 1)',
+        backgroundColor: darkMode ? 'rgba(59, 130, 246, 0.5)' : 'rgba(59, 130, 246, 0.7)',
+        borderColor: darkMode ? 'rgba(59, 130, 246, 1)' : 'rgba(59, 130, 246, 1)',
         borderWidth: 1,
       },
     ],
@@ -83,13 +88,13 @@ const AnalyticsView = ({ theme, tasks }) => {
       legend: {
         position: 'top',
         labels: {
-          color: theme === 'dark' ? '#fff' : '#333',
+          color: darkMode ? '#fff' : '#333',
         },
       },
       title: {
         display: true,
         text: 'Peak Productivity Hours',
-        color: theme === 'dark' ? '#fff' : '#333',
+        color: darkMode ? '#fff' : '#333',
         font: {
           size: 18,
         }
@@ -98,19 +103,19 @@ const AnalyticsView = ({ theme, tasks }) => {
     scales: {
       x: {
         ticks: {
-          color: theme === 'dark' ? '#ccc' : '#666',
+          color: darkMode ? '#ccc' : '#666',
         },
         grid: {
-          color: theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+          color: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
         }
       },
       y: {
         ticks: {
-          color: theme === 'dark' ? '#ccc' : '#666',
+          color: darkMode ? '#ccc' : '#666',
           stepSize: 1
         },
         grid: {
-          color: theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+          color: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
         }
       },
     },
@@ -118,17 +123,17 @@ const AnalyticsView = ({ theme, tasks }) => {
 
   return (
     <div className="p-6 space-y-6">
-      <h2 className={`text-3xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Your Analytics</h2>
+      <h2 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Your Analytics</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <AnalyticsCard title="Total Tasks Completed" value={totalCompleted} theme={theme} />
-        <AnalyticsCard title="Current Daily Streak" value={streak > 0 ? `${streakText} 🔥` : streakText} theme={theme} />
-        <AnalyticsCard title="Focus Level" value="Coming Soon" theme={theme} />
+        <AnalyticsCard title="Total Tasks Completed" value={totalCompleted} />
+        <AnalyticsCard title="Current Daily Streak" value={streak > 0 ? `${streakText} 🔥` : streakText} />
+        <AnalyticsCard title="Focus Level" value="Coming Soon" />
       </div>
-      <div className={`p-6 rounded-lg shadow-md h-96 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+      <div className={`p-6 rounded-lg shadow-md h-96 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
         <Bar options={chartOptions} data={chartData} />
       </div>
     </div>
   );
 };
 
-export default AnalyticsView; 
+export default AnalyticsView;

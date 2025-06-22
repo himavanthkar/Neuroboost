@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Brain } from 'lucide-react';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
 import { useTheme } from '../context/ThemeContext';
 
-const SignUp = () => {
+const Login = () => {
   const { darkMode } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -13,12 +13,12 @@ const SignUp = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSignUp = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, email, password);
       navigate('/app');
     } catch (error) {
       setError(error.message);
@@ -36,13 +36,13 @@ const SignUp = () => {
                     <Brain className="w-7 h-7 text-white" />
                 </div>
             </div>
-          <h2 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Create your account</h2>
+          <h2 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Sign in to your account</h2>
           <p className={`mt-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            Or <Link to="/login" className="font-medium text-blue-500 hover:text-blue-400">sign in to your existing account</Link>
+            Or <Link to="/signup" className="font-medium text-blue-500 hover:text-blue-400">create a new account</Link>
           </p>
         </div>
         
-        <form className="space-y-6" onSubmit={handleSignUp}>
+        <form className="space-y-6" onSubmit={handleLogin}>
           <div>
             <label htmlFor="email" className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Email address</label>
             <input 
@@ -71,7 +71,7 @@ const SignUp = () => {
           </div>
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <button type="submit" disabled={loading} className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50">
-            {loading ? 'Creating Account...' : 'Create Account'}
+            {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
 
@@ -97,4 +97,4 @@ const SignUp = () => {
   );
 };
 
-export default SignUp;
+export default Login; 

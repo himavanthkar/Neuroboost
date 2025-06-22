@@ -1,6 +1,8 @@
 import React from 'react';
+import { useTheme } from '../../context/ThemeContext';
 
-const Features = ({ features, darkMode }) => {
+const Features = ({ features }) => {
+  const { darkMode } = useTheme();
   return (
     <section id="features" className={`py-20 md:py-28 transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
       <div className="container mx-auto px-6">

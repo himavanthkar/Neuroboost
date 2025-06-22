@@ -1,7 +1,9 @@
 import React from 'react';
 import DashboardCard from './DashboardCard';
+import { useTheme } from '../context/ThemeContext';
 
-const SmartSchedule = ({ theme }) => {
+const SmartSchedule = () => {
+  const { darkMode } = useTheme();
   const scheduleItems = [
     { time: "9:00 AM", task: "Math Study Session", type: "focus", duration: "90 min" },
     { time: "10:30 AM", task: "Break & Movement", type: "break", duration: "15 min" },
@@ -17,20 +19,20 @@ const SmartSchedule = ({ theme }) => {
       review: 'bg-purple-100 text-purple-700 border-purple-200',
       creative: 'bg-orange-100 text-orange-700 border-orange-200'
     };
-    return theme === 'dark' ? 'bg-gray-700 text-gray-300 border-gray-600' : colors[type];
+    return darkMode ? 'bg-gray-700 text-gray-300 border-gray-600' : colors[type];
   };
 
   return (
-    <DashboardCard title="Smart Schedule Timeline" theme={theme}>
+    <DashboardCard title="Smart Schedule Timeline">
       <div className="space-y-3">
         {scheduleItems.map((item, index) => (
           <div key={index} className="flex items-center space-x-4">
-            <div className={`text-sm font-medium w-20 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+            <div className={`text-sm font-medium w-20 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               {item.time}
             </div>
             <div className={`flex-1 px-3 py-2 rounded-lg border ${getTypeColor(item.type)}`}>
               <div className="font-medium">{item.task}</div>
-              <div className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{item.duration}</div>
+              <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{item.duration}</div>
             </div>
           </div>
         ))}

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import DashboardCard from './DashboardCard';
 import { Trash2 } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
-const TodoList = ({ theme, tasks, onToggle, onDelete, onAdd, onClear, className = "" }) => {
+const TodoList = ({ tasks, onToggle, onDelete, onAdd, onClear, className = "" }) => {
+  const { darkMode } = useTheme();
   const [newTaskText, setNewTaskText] = useState('');
 
   const handleAddTask = (e) => {
@@ -17,14 +19,13 @@ const TodoList = ({ theme, tasks, onToggle, onDelete, onAdd, onClear, className 
   return (
     <DashboardCard 
       title="Today's Tasks" 
-      theme={theme} 
       className={className}
       headerContent={
         tasks.length > 0 && (
           <button
             onClick={onClear}
             className={`px-2 py-1 text-xs rounded-md flex items-center space-x-1 ${
-              theme === 'dark' 
+              darkMode 
                 ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
                 : 'bg-gray-200 hover:bg-gray-300 text-gray-600'
             }`}
@@ -38,14 +39,14 @@ const TodoList = ({ theme, tasks, onToggle, onDelete, onAdd, onClear, className 
       {tasks.length > 0 && (
         <div className="mb-4">
           <div className="flex justify-between items-center mb-2">
-            <span className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+            <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               {completedCount} of {tasks.length} completed
             </span>
-            <span className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+            <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               {Math.round(progressPercent)}%
             </span>
           </div>
-          <div className={`w-full ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} rounded-full h-2`}>
+          <div className={`w-full ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} rounded-full h-2`}>
             <div className="bg-blue-500 h-2 rounded-full transition-all duration-300" style={{ width: `${progressPercent}%` }}></div>
           </div>
         </div>
@@ -58,13 +59,13 @@ const TodoList = ({ theme, tasks, onToggle, onDelete, onAdd, onClear, className 
               <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
                 task.done 
                   ? 'bg-green-500 border-green-500' 
-                  : theme === 'dark' 
+                  : darkMode 
                     ? 'border-gray-600 group-hover:border-green-500' 
                     : 'border-gray-300 group-hover:border-green-500'
               }`}>
                 {task.done && <div className="w-2 h-2 bg-white rounded-full"></div>}
               </div>
-              <span className={`flex-1 ${task.done ? 'line-through opacity-60' : ''} ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+              <span className={`flex-1 ${task.done ? 'line-through opacity-60' : ''} ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                 {task.text}
               </span>
               <button
@@ -79,7 +80,7 @@ const TodoList = ({ theme, tasks, onToggle, onDelete, onAdd, onClear, className 
             </div>
           ))
         ) : (
-          <p className={`text-center text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+          <p className={`text-center text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
             No tasks for today. Add one to get started!
           </p>
         )}
@@ -92,7 +93,7 @@ const TodoList = ({ theme, tasks, onToggle, onDelete, onAdd, onClear, className 
           onChange={(e) => setNewTaskText(e.target.value)}
           placeholder="Add a new task..."
           className={`flex-1 px-3 py-2 rounded-lg border text-sm ${
-            theme === 'dark' 
+            darkMode 
               ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500' 
               : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500'
           }`}

@@ -3,10 +3,12 @@ import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import SubscriptionModal from './SubscriptionModal';
+import { useTheme } from '../context/ThemeContext';
 
 const localizer = momentLocalizer(moment);
 
-const CalendarView = ({ theme, tasks }) => {
+const CalendarView = ({ tasks }) => {
+  const { darkMode } = useTheme();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const events = tasks.map(task => ({
@@ -23,7 +25,7 @@ const CalendarView = ({ theme, tasks }) => {
   const eventStyleGetter = (event) => {
     const isCompleted = event.resource.isCompleted;
     let backgroundColor = isCompleted ? '#34D399' : '#3B82F6'; // Green for completed, Blue for pending
-    if(theme === 'dark') {
+    if(darkMode) {
       backgroundColor = isCompleted ? '#10B981' : '#2563EB';
     }
     const style = {
@@ -49,7 +51,7 @@ const CalendarView = ({ theme, tasks }) => {
     <>
       <div className="p-6 h-[calc(100vh-100px)]">
         <div className="flex justify-between items-center mb-4">
-          <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+          <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
             Calendar
           </h2>
           <div className="flex space-x-2">
@@ -66,7 +68,7 @@ const CalendarView = ({ theme, tasks }) => {
             </button>
           </div>
         </div>
-        <div className={`p-4 rounded-lg h-full ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white'}`}>
+        <div className={`p-4 rounded-lg h-full ${darkMode ? 'bg-gray-800 text-white' : 'bg-white'}`}>
           <Calendar
             localizer={localizer}
             events={events}
@@ -79,7 +81,6 @@ const CalendarView = ({ theme, tasks }) => {
         </div>
       </div>
       <SubscriptionModal 
-        theme={theme}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleAddSubscription}

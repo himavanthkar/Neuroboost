@@ -2,40 +2,41 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import SignUp from './pages/SignUp';
+import Login from './pages/Login';
 import MainApp from './MainApp';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
+import ProtectedRoute from './ProtectedRoute';
 
-function App() {
-  const [darkMode, setDarkMode] = React.useState(false);
-
-  const toggleDarkMode = () => {
-    setDarkMode(prevMode => {
-      const newMode = !prevMode;
-      if (newMode) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-      return newMode;
-    });
-  };
-  
-  // A placeholder for authentication logic
-  const isAuthenticated = false; 
+function AppRoutes() {
+  const { currentUser } = useAuth();
 
   return (
+    <Routes>
+      <Route path="/" element={!currentUser ? <LandingPage /> : <Navigate to="/app" />} />
+      <Route path="/signup" element={!currentUser ? <SignUp /> : <Navigate to="/app" />} />
+      <Route path="/login" element={!currentUser ? <Login /> : <Navigate to="/app" />} />
+      <Route 
+        path="/app" 
+        element={
+          <ProtectedRoute>
+            <MainApp />
+          </ProtectedRoute>
+        } 
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+function App() {
+  return (
     <Router>
-      <div className={darkMode ? 'dark' : ''}>
-        <Routes>
-          <Route path="/" element={<LandingPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />} />
-          <Route path="/signup" element={<SignUp darkMode={darkMode} />} />
-          <Route 
-            path="/app" 
-            element={isAuthenticated ? <MainApp /> : <Navigate to="/" replace />} 
-          />
-          {/* Redirect any unknown paths to the landing page */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </div>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </ThemeProvider>
     </Router>
   );
 }

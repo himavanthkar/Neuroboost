@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTheme } from '../context/ThemeContext';
 
 // Import the evolution images
 import slumberbloomImg from '../assets/Slumberbloom.png';
@@ -11,7 +12,8 @@ const evolutions = [
   { name: 'Silvangaurd', xpThreshold: 25, image: silvangaurdImg, level: 3 },
 ];
 
-const LevelUpStatus = ({ theme, xp, isFullPage = false }) => {
+const LevelUpStatus = ({ xp, isFullPage = false }) => {
+  const { darkMode } = useTheme();
   const currentEvolution = [...evolutions].reverse().find(evo => xp >= evo.xpThreshold);
   const nextEvolutionIndex = evolutions.findIndex(evo => evo.name === currentEvolution.name) + 1;
   const nextEvolution = evolutions[nextEvolutionIndex];
@@ -37,20 +39,20 @@ const LevelUpStatus = ({ theme, xp, isFullPage = false }) => {
         alt={currentEvolution.name} 
         className="w-48 h-48 md:w-64 md:h-64 object-contain mb-6 transition-transform duration-500 hover:scale-110"
       />
-      <h3 className={`text-3xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+      <h3 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
         {currentEvolution.name}
       </h3>
-      <p className={`text-lg mb-6 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+      <p className={`text-lg mb-6 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
         Level {currentEvolution.level}
       </p>
       <div className="w-full max-w-md">
         <div className="flex justify-between items-center mb-2 text-sm font-medium">
-          <span className={`${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>XP</span>
-          <span className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+          <span className={`${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>XP</span>
+          <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
             {xp} / {xpForNextLevel}
           </span>
         </div>
-        <div className={`w-full ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} rounded-full h-4`}>
+        <div className={`w-full ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} rounded-full h-4`}>
           <div 
             className="bg-gradient-to-r from-yellow-400 to-orange-500 h-4 rounded-full transition-all duration-500" 
             style={{ width: `${progressPercent}%` }}>
@@ -63,31 +65,31 @@ const LevelUpStatus = ({ theme, xp, isFullPage = false }) => {
   if (isFullPage) {
     return (
       <div className="p-6">
-        <h2 className={`text-3xl font-bold mb-6 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+        <h2 className={`text-3xl font-bold mb-6 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
           Your Companion's Evolution
         </h2>
-        <div className={`p-6 rounded-lg shadow-lg ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+        <div className={`p-6 rounded-lg shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
           {content}
         </div>
         
         {previousEvolutions.length > 0 && (
           <div className="mt-8">
-            <h3 className={`text-2xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+            <h3 className={`text-2xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
               Evolution History
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {previousEvolutions.map(evo => (
                 <div 
                   key={evo.name}
-                  className={`p-4 rounded-lg text-center transition-opacity ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} opacity-60 hover:opacity-100`}
+                  className={`p-4 rounded-lg text-center transition-opacity ${darkMode ? 'bg-gray-800' : 'bg-white'} opacity-60 hover:opacity-100`}
                 >
                   <img 
                     src={evo.image} 
                     alt={evo.name} 
                     className="w-24 h-24 object-contain mx-auto mb-2"
                   />
-                  <p className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{evo.name}</p>
-                  <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Lvl {evo.level}</p>
+                  <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{evo.name}</p>
+                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Lvl {evo.level}</p>
                 </div>
               ))}
             </div>
@@ -99,8 +101,8 @@ const LevelUpStatus = ({ theme, xp, isFullPage = false }) => {
 
   // This is for the dashboard view, keeping it more compact
   return (
-    <div className={`p-6 rounded-lg shadow-md ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
-      <h3 className={`text-lg font-semibold mb-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Your Companion</h3>
+    <div className={`p-6 rounded-lg shadow-md ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+      <h3 className={`text-lg font-semibold mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Your Companion</h3>
       {content}
     </div>
   );

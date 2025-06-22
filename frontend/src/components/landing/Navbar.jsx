@@ -1,7 +1,9 @@
 import React from 'react';
 import { Sun, Moon, Menu, X } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
-const Navbar = ({ darkMode, toggleDarkMode, mobileMenuOpen, setMobileMenuOpen }) => {
+const Navbar = ({ mobileMenuOpen, setMobileMenuOpen }) => {
+  const { darkMode, toggleDarkMode } = useTheme();
   return (
     <nav className={`sticky top-0 z-50 transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-800 shadow-md'}`}>
       <div className="container mx-auto px-6 py-4 flex justify-between items-center">

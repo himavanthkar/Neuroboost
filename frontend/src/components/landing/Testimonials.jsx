@@ -1,7 +1,9 @@
 import React from 'react';
 import { Star } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
-const Testimonials = ({ testimonials, darkMode }) => {
+const Testimonials = ({ testimonials }) => {
+  const { darkMode } = useTheme();
   return (
     <section id="testimonials" className={`py-20 md:py-28 transition-colors duration-300 ${darkMode ? 'bg-gray-900' : 'bg-gray-800'}`}>
       <div className="container mx-auto px-6">

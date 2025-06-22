@@ -1,7 +1,9 @@
 import React from 'react';
 import silvangaurdImg from '../../assets/Silvangaurd.png';
+import { useTheme } from '../../context/ThemeContext';
 
-const HeroSection = ({ darkMode }) => {
+const HeroSection = () => {
+  const { darkMode } = useTheme();
   return (
     <section className={`py-20 md:py-32 transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-800'}`}>
       <div className="container mx-auto px-6">

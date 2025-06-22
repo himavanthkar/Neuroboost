@@ -11,11 +11,12 @@ import CalendarView from './components/CalendarView';
 import CBTPomodoroFlow from './components/CBTPomodoroFlow';
 import AnalyticsView from './components/AnalyticsView';
 import SettingsPage from './components/SettingsPage';
+import { useTheme } from './context/ThemeContext';
 
 const notificationSound = new Audio('https://orangefreesounds.com/wp-content/uploads/2020/04/Alert-notification.mp3');
 
-function App() {
-  const [theme, setTheme] = useState('light');
+function MainApp() {
+  const { darkMode } = useTheme();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [mood, setMood] = useState('focused');
   const [profilePic, setProfilePic] = useState(null);
@@ -59,10 +60,6 @@ function App() {
     return () => clearInterval(timer);
   }, [cbtMode, cbtTimerActive]);
 
-  const handleThemeToggle = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
-  };
-
   const handleTabChange = (tab) => {
     setActiveTab(tab);
   };
@@ -83,8 +80,6 @@ function App() {
     if (taskCompleted) {
       setTotalCompletedTasks(prevCount => prevCount + 1);
     } else {
-      // If a task is unchecked, we might need to decrease the total count
-      // This logic assumes unchecking a completed task reduces the count.
       const taskWasDone = tasks.find(t => t.id === id)?.done;
       if (taskWasDone) {
         setTotalCompletedTasks(prevCount => Math.max(0, prevCount - 1));
@@ -144,10 +139,9 @@ function App() {
   const renderDashboard = () => (
     <div className="p-6 space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <DailyPKGSummary theme={theme} />
-        <LevelUpStatus theme={theme} xp={totalCompletedTasks} />
-        <TodoList 
-          theme={theme}
+        <DailyPKGSummary />
+        <LevelUpStatus xp={totalCompletedTasks} />
+        <TodoList
           tasks={tasks.filter(t => t.date === new Date().toISOString().slice(0, 10))}
           onToggle={handleToggleTask}
           onDelete={handleDeleteTask}
@@ -157,8 +151,8 @@ function App() {
         />
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <SmartSchedule theme={theme} />
-        <MotivationCard mood={mood} theme={theme} />
+        <SmartSchedule />
+        <MotivationCard mood={mood} />
       </div>
     </div>
   );
@@ -168,8 +162,7 @@ function App() {
       case 'dashboard':
         return renderDashboard();
       case 'tasks':
-        return <WeeklyTasksView 
-          theme={theme}
+        return <WeeklyTasksView
           tasks={tasks}
           onToggle={handleToggleTask}
           onDelete={handleDeleteTask}
@@ -177,18 +170,16 @@ function App() {
           onClearAll={handleClearAllTasks}
         />;
       case 'gamification':
-        return <LevelUpStatus 
-          theme={theme}
+        return <LevelUpStatus
           xp={totalCompletedTasks}
-          isFullPage={true} 
+          isFullPage={true}
         />;
       case 'notes':
         return <div className="p-6">Transcribed Notes - Coming Soon</div>;
       case 'calendar':
-        return <CalendarView theme={theme} tasks={tasks} />;
+        return <CalendarView tasks={tasks} />;
       case 'cbt':
-        return <CBTPomodoroFlow 
-          theme={theme}
+        return <CBTPomodoroFlow
           cbtMode={cbtMode}
           cbtTimeLeft={cbtTimeLeft}
           cbtTimerActive={cbtTimerActive}
@@ -198,35 +189,24 @@ function App() {
           skipToPlayZone={skipToPlayZone}
         />;
       case 'analytics':
-        return <AnalyticsView theme={theme} tasks={tasks} />;
+        return <AnalyticsView tasks={tasks} />;
       case 'settings':
-        return <SettingsPage 
-          theme={theme} 
-          onThemeToggle={handleThemeToggle} 
-          profilePic={profilePic}
-          onProfilePicChange={handleProfilePicChange}
-        />;
+        return <SettingsPage onProfilePicChange={handleProfilePicChange} profilePic={profilePic}/>;
       default:
         return renderDashboard();
     }
   };
 
   return (
-    <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
-      <TopNavBar 
-        mood={mood} 
-        theme={theme} 
-        onThemeToggle={handleThemeToggle} 
-        onTabChange={handleTabChange}
-        profilePic={profilePic}
-      />
-      <div className="flex">
-        <Sidebar 
-          activeTab={activeTab} 
-          onTabChange={handleTabChange} 
-          theme={theme} 
+    <div className={`flex h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
+      <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <TopNavBar
+          mood={mood}
+          onTabChange={handleTabChange}
+          profilePic={profilePic}
         />
-        <main className="flex-1">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto">
           {renderContent()}
         </main>
       </div>
@@ -234,4 +214,4 @@ function App() {
   );
 }
 
-export default App;
+export default MainApp; 

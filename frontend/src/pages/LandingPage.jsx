@@ -6,6 +6,7 @@ import Features from '../components/landing/Features';
 import Testimonials from '../components/landing/Testimonials';
 import CTASection from '../components/landing/CTASection';
 import Footer from '../components/landing/Footer';
+import { useTheme } from '../context/ThemeContext';
 
 const features = [
   {
@@ -58,24 +59,23 @@ const testimonials = [
   }
 ];
 
-const LandingPage = ({ darkMode, toggleDarkMode }) => {
+const LandingPage = () => {
+  const { darkMode, toggleDarkMode } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   return (
     <>
       <Navbar 
-        darkMode={darkMode} 
-        toggleDarkMode={toggleDarkMode} 
         mobileMenuOpen={mobileMenuOpen} 
         setMobileMenuOpen={setMobileMenuOpen} 
       />
       <main>
-        <HeroSection darkMode={darkMode} />
-        <Features features={features} darkMode={darkMode} />
-        <Testimonials testimonials={testimonials} darkMode={darkMode} />
-        <CTASection darkMode={darkMode} />
+        <HeroSection />
+        <Features features={features} />
+        <Testimonials testimonials={testimonials} />
+        <CTASection />
       </main>
-      <Footer darkMode={darkMode} />
+      <Footer />
     </>
   );
 };
