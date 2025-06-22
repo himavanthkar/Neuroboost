@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import TopNavBar from './components/TopNavBar';
 import Sidebar from './components/Sidebar';
 import DailyPKGSummary from './components/DailyPKGSummary';
@@ -8,6 +8,9 @@ import MotivationCard from './components/MotivationCard';
 import WeeklyTasksView from './components/WeeklyTasksView';
 import LevelUpStatus from './components/LevelUpStatus';
 import CalendarView from './components/CalendarView';
+import CBTPomodoroFlow from './components/CBTPomodoroFlow';
+
+const notificationSound = new Audio('https://orangefreesounds.com/wp-content/uploads/2020/04/Alert-notification.mp3');
 
 function App() {
   const [theme, setTheme] = useState('light');
@@ -19,6 +22,35 @@ function App() {
     { id: 3, text: "Write history essay outline", done: false, date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10) },
   ]);
   const [totalCompletedTasks, setTotalCompletedTasks] = useState(() => tasks.filter(t => t.done).length);
+
+  // CBT Timer state
+  const [cbtMode, setCbtMode] = useState(true);
+  const [cbtTimeLeft, setCbtTimeLeft] = useState(15 * 60);
+  const [cbtTimerActive, setCbtTimerActive] = useState(false);
+
+  // CBT Timer effect
+  useEffect(() => {
+    if (!cbtTimerActive) return;
+
+    const timer = setInterval(() => {
+      setCbtTimeLeft(prevTime => {
+        if (prevTime <= 1) {
+          notificationSound.play();
+          // Switch mode and set time for the next phase
+          if (cbtMode) {
+            setCbtMode(false);
+            return 10 * 60; // Play Zone duration
+          } else {
+            setCbtMode(true);
+            return 15 * 60; // CBT duration
+          }
+        }
+        return prevTime - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [cbtMode, cbtTimerActive]);
 
   const handleThemeToggle = () => {
     setTheme(theme === 'light' ? 'dark' : 'light');
@@ -67,6 +99,26 @@ function App() {
     }
   };
 
+  const startCbtTimer = () => {
+    setCbtTimerActive(true);
+  };
+
+  const stopCbtTimer = () => {
+    setCbtTimerActive(false);
+  };
+
+  const resetCbtTimer = () => {
+    setCbtTimerActive(false);
+    setCbtMode(true);
+    setCbtTimeLeft(15 * 60);
+  };
+
+  const skipToPlayZone = () => {
+    setCbtMode(false);
+    setCbtTimeLeft(10 * 60);
+    setCbtTimerActive(true);
+  };
+
   const renderDashboard = () => (
     <div className="p-6 space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -113,7 +165,16 @@ function App() {
       case 'calendar':
         return <CalendarView theme={theme} tasks={tasks} />;
       case 'cbt':
-        return <div className="p-6">CBT Tools - Coming Soon</div>;
+        return <CBTPomodoroFlow 
+          theme={theme}
+          cbtMode={cbtMode}
+          cbtTimeLeft={cbtTimeLeft}
+          cbtTimerActive={cbtTimerActive}
+          startCbtTimer={startCbtTimer}
+          stopCbtTimer={stopCbtTimer}
+          resetCbtTimer={resetCbtTimer}
+          skipToPlayZone={skipToPlayZone}
+        />;
       case 'analytics':
         return <div className="p-6">Analytics Dashboard - Coming Soon</div>;
       default:
