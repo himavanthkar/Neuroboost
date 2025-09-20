@@ -16,6 +16,7 @@ import AdminDashboard from './components/AdminDashboard';
 import TranscribedNotes from './components/TranscribedNotes';
 import DiagramDay from './components/DiagramDay';
 import BrainStatePrediction from './components/BrainStatePrediction';
+import ADHDLanguageUnderstanding from './components/ADHDLanguageUnderstanding';
 import { useTheme } from './context/ThemeContext';
 import { useAuth } from './context/AuthContext';
 import SimpleVoiceWidget from './components/SimpleVoiceWidget';
@@ -584,6 +585,8 @@ function MainApp() {
         return <DiagramDay tasks={tasks} />;
       case 'brain-state':
         return <BrainStatePrediction />;
+      case 'adhd-language':
+        return <ADHDLanguageUnderstanding />;
       default:
         return renderDashboard();
     }
