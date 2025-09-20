@@ -61,6 +61,13 @@ motivate_agent = MotivateAgent()
 
 async def save_task_to_supabase(task_data, user_id="demo"):
     """Save task to Supabase database"""
+    import uuid
+    
+    # Generate a proper UUID for demo user if needed
+    if user_id == "demo":
+        # Use a consistent UUID for demo user
+        user_id = "550e8400-e29b-41d4-a716-446655440000"  # Standard demo UUID
+    
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
