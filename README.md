@@ -1,20 +1,20 @@
-# 🧠 NeuroBoost - AI-Powered ADHD Productivity Platform
+#  NeuroBoost - AI-Powered ADHD Productivity Platform
 
-## 🎯 **Current Status: PARTIALLY WORKING**
+## **Current Status: PARTIALLY WORKING**
 
-### ✅ **What's Actually Working:**
+###  **What's Actually Working:**
 - **Frontend (React)**: Beautiful UI with mood-responsive theming
 - **AI Agents Service**: Basic voice-to-task conversion
 - **Voice Service**: VAPI webhook integration and task forwarding
 - **Task Management**: Create, edit, delete tasks via voice and UI
 - **Mood-Based Theming**: UI adapts colors based on detected mood
 
-### ⚠️ **What's Partially Working:**
+###  **What's Partially Working:**
 - **API Gateway**: Running but crashing due to Redis connection issues
 - **Database Integration**: Supabase connected but UUID errors with demo users
 - **Voice Integration**: Working but API key authentication issues
 
-### ❌ **What's Broken/Missing:**
+### **What's Broken/Missing:**
 - **Analytics Service**: Empty directory, no implementation
 - **Workflow Engine**: Empty directory, no implementation
 - **Redis**: Not running, causing service crashes
@@ -23,7 +23,7 @@
 
 ---
 
-## 🚀 **Quick Start (Current Working Setup)**
+##  **Quick Start (Current Working Setup)**
 
 ### 1. **Start Working Services**
 ```bash
@@ -48,7 +48,7 @@ cd voice-service && python3 -m uvicorn main:app --host 0.0.0.0 --port 8002 --rel
 
 ---
 
-## 🏗️ **Architecture Overview**
+##  **Architecture Overview**
 
 ### **Current Working Services:**
 ```
