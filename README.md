@@ -1,313 +1,122 @@
-#  NeuroBoost - AI-Powered ADHD Productivity Platform
+# NeuroBoost
 
-## **Current Status: PARTIALLY WORKING**
+NeuroBoost is a productivity app built for ADHD brains. Talk to it and it turns what you say into tasks, tell it how you're feeling and the whole interface shifts color and layout to match, and it wraps the whole thing in a bit of gamification so tracking your day doesn't feel like a chore.
 
-###  **What's Actually Working:**
-- **Frontend (React)**: Beautiful UI with mood-responsive theming
-- **AI Agents Service**: Basic voice-to-task conversion
-- **Voice Service**: VAPI webhook integration and task forwarding
-- **Task Management**: Create, edit, delete tasks via voice and UI
-- **Mood-Based Theming**: UI adapts colors based on detected mood
+It started as a hackathon project built around a handful of sponsor APIs (Claude, Gemini, Groq, Vapi, Letta, Orkes).
 
-###  **What's Partially Working:**
-- **API Gateway**: Running but crashing due to Redis connection issues
-- **Database Integration**: Supabase connected but UUID errors with demo users
-- **Voice Integration**: Working but API key authentication issues
+## Features
 
-### **What's Broken/Missing:**
-- **Analytics Service**: Empty directory, no implementation
-- **Workflow Engine**: Empty directory, no implementation
-- **Redis**: Not running, causing service crashes
-- **PostgreSQL**: Not running (Docker services not started)
-- **API Keys**: Anthropic, VAPI, and other keys need proper configuration
+**Task management**
+- Add, edit, complete, and delete tasks from the UI or by voice
+- Daily view, weekly view, and a calendar view
+- Tasks are saved per user in Supabase, so nothing disappears when you close the tab
 
----
+**Voice input**
+- Say something like "add groceries to Monday" and it shows up in your task list, no typing needed
+- A dedicated ADHD language processor tries to make sense of scattered, rambling speech ("that email thing... doctor... insurance stuff, ugh") and pull the actual task out of it
+- Also picks up on emotional patterns common in ADHD, like rejection sensitivity, and responds with something supportive instead of just logging a task
 
-##  **Quick Start (Current Working Setup)**
+**Mood detection and theming**
+- Reads what you type or say and shifts the app's colors and layout to match your headspace
+- Calm blues when you're overwhelmed, energetic oranges when you're wired, soft grays when you're wiped out, and a few more in between
 
-### 1. **Start Working Services**
+**Focus tools**
+- CBT-style Pomodoro flow for focus sessions
+- Analytics view with productivity and mood trend charts
+
+**Gamification**
+- XP and a leveling system
+- A cat companion that grows as you knock out tasks
+- Unlockable achievements
+
+**Accounts**
+- Sign up and log in through Supabase
+- An admin dashboard for looking at all users and their activity
+
+**Extras**
+- Settings page, dark mode, sound notification when a task comes in
+
+## Screenshots
+
+| Landing page | Features section |
+| --- | --- |
+| ![Landing page](docs/screenshots/landing-page.png) | ![Features section](docs/screenshots/features-section.png) |
+
+| Login page |
+| --- |
+| ![Login page](docs/screenshots/login-page.png) |
+
+## Tech stack
+
+- Frontend: React, Vite, Tailwind CSS
+- Voice and AI services: Python, FastAPI
+- API Gateway: Node.js, Express, WebSocket, Redis
+- Database and auth: Supabase (Postgres)
+- AI: Anthropic Claude
+- Voice calls: Vapi
+
+## Getting started
+
+### Just the frontend
+
 ```bash
-# Frontend (React + Vite)
-cd frontend && npm run dev
-# Access: http://localhost:5173
-
-# AI Agents Service (FastAPI)
-cd ai_agents && python3 -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-# Access: http://localhost:8000/docs
-
-# Voice Service (FastAPI)
-cd voice-service && python3 -m uvicorn main:app --host 0.0.0.0 --port 8002 --reload
-# Access: http://localhost:8002/docs
+cd frontend
+npm install
 ```
 
-### 2. **Test Voice Integration**
-- Open frontend at http://localhost:5173
-- Use voice widget to add tasks
-- Say: "Add groceries to Monday"
-- Tasks should appear in the UI
+Create a `.env` file inside `frontend/`:
 
----
-
-##  **Architecture Overview**
-
-### **Current Working Services:**
 ```
-Frontend (React) ←→ Voice Service ←→ AI Agents ←→ Supabase
-     ↓                    ↓              ↓
-  Mood Themes        VAPI Webhook    Task Processing
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-### **Service Details:**
+Then run it:
 
-#### **Frontend (Port 5173)**
-- **Tech**: React + Vite + TailwindCSS
-- **Features**: 
-  - Mood-responsive theming
-  - Task management UI
-  - Voice widget integration
-  - Multiple views (Dashboard, Tasks, Analytics, etc.)
-- **Status**: ✅ **FULLY WORKING**
-
-#### **AI Agents Service (Port 8000)**
-- **Tech**: FastAPI + Python
-- **Features**:
-  - Task creation from voice commands
-  - Basic mood detection
-  - Supabase integration
-- **Status**: ✅ **WORKING** (with database errors)
-- **Issues**: UUID errors with demo user IDs
-
-#### **Voice Service (Port 8002)**
-- **Tech**: FastAPI + Python
-- **Features**:
-  - VAPI webhook integration
-  - ADHD language processing
-  - Task forwarding to AI agents
-- **Status**: ✅ **WORKING** (with API key issues)
-- **Issues**: Anthropic API key authentication failures
-
-#### **API Gateway (Port 3000)**
-- **Tech**: Node.js + Express
-- **Status**: ⚠️ **CRASHING** (Redis connection issues)
-
----
-
-## 🔧 **Current Issues & Solutions**
-
-### **Critical Issues:**
-
-1. **Database UUID Errors**
-   ```
-   ERROR: invalid input syntax for type uuid: "demo"
-   ```
-   **Solution**: Replace hardcoded "demo" user IDs with proper UUIDs
-
-2. **API Key Authentication Failures**
-   ```
-   ERROR: 401 Unauthorized - invalid x-api-key
-   ```
-   **Solution**: Update `.env` file with valid API keys
-
-3. **Missing Services**
-   - Analytics service: Empty directory
-   - Workflow engine: Empty directory
-   - **Solution**: Implement or remove references
-
-4. **Redis Connection Issues**
-   ```
-   ERROR: connect ECONNREFUSED ::1:6379
-   ```
-   **Solution**: Start Redis or make it optional
-
-### **Environment Configuration**
-
-Create/update `.env` file with:
-```env
-# Database
-SUPABASE_URL=https://hbarpylljytrdijjcmix.supabase.co
-SUPABASE_ANON_KEY=your_supabase_key_here
-
-# API Keys (REQUIRED)
-ANTHROPIC_API_KEY=your_anthropic_key_here
-VAPI_API_KEY=your_vapi_key_here
-GROQ_API_KEY=your_groq_key_here
-
-# Optional Services
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=redis123
-```
-
----
-
-## 🎨 **Features That Actually Work**
-
-### **1. Voice-to-Task Integration**
-- Say: "Add workout to Monday"
-- Task automatically created and appears in UI
-- Works through VAPI webhook → Voice Service → AI Agents
-
-### **2. Mood-Based Theming**
-- UI colors change based on detected mood
-- Calm → Blue, Energetic → Orange, Focused → Green
-- Mood detection from voice/text input
-
-### **3. Task Management**
-- Create, edit, delete tasks
-- Weekly and daily views
-- Task completion tracking
-- Local state management with Supabase sync
-
-### **4. ADHD-Focused UI**
-- Non-overwhelming interface
-- Mood-responsive design
-- Voice accessibility
-- Gamification elements (XP system)
-
----
-
-## 🚨 **What's NOT Working (Despite Claims)**
-
-### **Marketing vs Reality:**
-
-| **Claimed** | **Reality** | **Status** |
-|-------------|-------------|------------|
-| "Modular AI Agents" | Only TaskAgent works | ⚠️ Partial |
-| "Real-time Analytics" | Analytics service missing | ❌ Broken |
-| "CBT Pomodoro Mode" | UI exists, functionality unclear | ⚠️ Partial |
-| "Advanced Mood Detection" | Basic mood detection with API issues | ⚠️ Partial |
-| "Workflow Engine" | Empty directory | ❌ Missing |
-| "Admin Dashboard" | UI exists, backend unclear | ⚠️ Partial |
-
----
-
-## 🧪 **Testing Commands**
-
-### **Test Working Services:**
 ```bash
-# Test AI Agents
-curl http://localhost:8000/health
-
-# Test Voice Service
-curl http://localhost:8002/health
-
-# Test Frontend
-open http://localhost:5173
+npm run dev
 ```
 
-### **Test Voice Integration:**
-1. Open http://localhost:5173
-2. Click voice widget
-3. Say: "Add groceries to Monday"
-4. Check if task appears in UI
+Open http://localhost:5173. Without real Supabase credentials the landing page still loads, but login and signup won't work.
 
----
+### The whole app
 
-## 🔄 **Service Communication Flow**
+```bash
+# AI + voice services
+cd ai_agents && python3 -m uvicorn main:app --port 8000 --reload
+cd voice-service && python3 -m uvicorn main:app --port 8002 --reload
 
-### **Working Flow:**
+# API gateway (needs Redis running first)
+redis-server &
+cd api-gateway && npm install && npm run dev
+
+# frontend
+cd frontend && npm install && npm run dev
 ```
-User Voice Input → VAPI → Voice Service → AI Agents → Supabase → Frontend
+
+### Environment variables
+
+- `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` - frontend, needed just to get the app to load at all
+- `ANTHROPIC_API_KEY` - powers real mood detection and voice-to-task parsing
+- `VAPI_API_KEY` and `VAPI_PUBLIC_KEY` - voice calling
+- `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD` - only needed if you're running the API gateway
+
+## Project layout
+
+```
+frontend/         React app - UI, pages, voice widget, all the views
+ai_agents/        FastAPI service with the mood, task, focus, and motivation agents
+voice-service/    FastAPI service that handles the Vapi webhook and ADHD language processing
+api-gateway/      Express + WebSocket service for real-time updates
+analytics/        analytics dashboard service (in progress)
+workflow-engine/  automation/workflow service (in progress)
+database/         Supabase schema
 ```
 
-### **Current Issues:**
-- VAPI API key authentication
-- Supabase UUID validation
-- Redis connection for real-time updates
+## Roadmap
 
----
-
-## 📊 **Technical Debt**
-
-### **High Priority:**
-1. Fix UUID errors in database operations
-2. Configure valid API keys
-3. Implement missing services or remove references
-4. Add proper error handling
-
-### **Medium Priority:**
-1. Start Redis service or make optional
-2. Implement proper user authentication
-3. Add comprehensive testing
-4. Clean up hardcoded values
-
-### **Low Priority:**
-1. Add analytics service implementation
-2. Implement workflow engine
-3. Add comprehensive documentation
-4. Performance optimization
-
----
-
-## 🎯 **Accuracy Assessment: 6/10**
-
-### **What Works (60%):**
-- Frontend UI and UX
-- Basic voice-to-task functionality
-- Mood-based theming
-- Service communication structure
-
-### **What's Broken/Misleading (40%):**
-- Database integration issues
-- Missing core services
-- API key problems
-- Overstated feature claims
-
----
-
-## 🏆 **Bottom Line**
-
-**NeuroBoost is a solid foundation with excellent UX design and genuine ADHD-focused features. The core voice-to-task functionality works, but the backend infrastructure has significant issues that need fixing.**
-
-**For Demo**: Impressive and shows good understanding of ADHD needs
-**For Production**: Needs significant backend fixes and proper configuration
-
-### **Strengths:**
-- Beautiful, ADHD-friendly UI
-- Working voice integration
-- Mood-responsive theming
-- Good service architecture
-
-### **Weaknesses:**
-- Database integration issues
-- Missing services
-- API key configuration problems
-- Overstated feature claims
-
----
-
-## 🚀 **Next Steps**
-
-1. **Fix Critical Issues:**
-   - Update API keys in `.env`
-   - Fix UUID errors in database operations
-   - Start Redis or make optional
-
-2. **Implement Missing Services:**
-   - Create analytics service
-   - Implement workflow engine
-   - Or remove references to them
-
-3. **Improve Error Handling:**
-   - Add graceful degradation
-   - Better error messages
-   - Proper fallbacks
-
-4. **Testing & Documentation:**
-   - Add comprehensive tests
-   - Update documentation
-   - Create setup guides
-
----
-
-## 📝 **Notes**
-
-- Project shows real potential for ADHD productivity
-- Good understanding of ADHD user needs
-- Technical implementation needs work
-- Ready for hackathon demo with current features
-- Needs backend fixes for production use
-
-**Last Updated**: January 2025
-**Status**: Partially Working (6/10)
-**Recommendation**: Fix critical issues before production deployment
+- Build out the analytics dashboard with deeper productivity and mood trend insights
+- Bring the workflow engine online for automating recurring routines
+- Expand voice command coverage and natural language understanding
+- More gamification: streaks, badges, and social/sharing features
+- Polish real-time sync across devices
