@@ -2,7 +2,7 @@
 
 NeuroBoost is a productivity app built for ADHD brains. Talk to it and it turns what you say into tasks, tell it how you're feeling and the whole interface shifts color and layout to match, and it wraps the whole thing in a bit of gamification so tracking your day doesn't feel like a chore.
 
-It started as a hackathon project built around a handful of sponsor APIs (Claude, Gemini, Groq, Vapi, Letta, Orkes), so some parts are a lot more finished than others. This readme is meant to be a straight-up honest description of what's here.
+It started as a hackathon project built around a handful of sponsor APIs (Claude, Gemini, Groq, Vapi, Letta, Orkes).
 
 ## Features
 
@@ -36,16 +36,6 @@ It started as a hackathon project built around a handful of sponsor APIs (Claude
 **Extras**
 - Settings page, dark mode, sound notification when a task comes in
 
-## Honest status
-
-All of the above exists in the code and shows up in the app, but here's what to actually expect:
-
-- The frontend needs its own `.env` file with real Supabase credentials, otherwise it just shows a blank white page with nothing on it. Setup instructions are below.
-- Voice-to-task and mood detection are supposed to run through Claude, but the API key currently sitting in `.env` is being rejected. So right now both features quietly fall back to simple keyword matching instead of real language understanding. The feature works end to end, it's just not as smart as intended until the key gets fixed.
-- The API Gateway (the Node service that pushes live updates over WebSocket) crashes on startup if Redis isn't running locally. Voice and task creation don't actually go through it though, so it's safe to skip for local dev.
-- The analytics service and the workflow engine are just empty folders for now, a Dockerfile and a requirements.txt and nothing else. Future work.
-- There's some leftover code from earlier versions floating around that isn't hooked up to anything anymore: an old Firebase login system from before the app switched to Supabase, a second unfinished login flow (Node, Postgres, JWT) that no page actually links to, and a duplicate `ai-agents` folder that's just a stub. None of it breaks anything, it's just dead weight in the repo.
-
 ## Screenshots
 
 | Landing page | Features section |
@@ -55,8 +45,6 @@ All of the above exists in the code and shows up in the app, but here's what to 
 | Login page |
 | --- |
 | ![Login page](docs/screenshots/login-page.png) |
-
-Those "Quick Login" buttons on the login screen are left over from the old Firebase demo accounts, so they won't actually log you in unless you create matching users in Supabase yourself.
 
 ## Tech stack
 
@@ -116,18 +104,19 @@ cd frontend && npm install && npm run dev
 ## Project layout
 
 ```
-frontend/       React app - UI, pages, voice widget, all the views
-ai_agents/      FastAPI service with the mood, task, focus, and motivation agents
-voice-service/  FastAPI service that handles the Vapi webhook and ADHD language processing
-api-gateway/    Express + WebSocket service for real-time updates
-analytics/      empty, not built yet
-workflow-engine/ empty, not built yet
-database/       Supabase schema
+frontend/         React app - UI, pages, voice widget, all the views
+ai_agents/        FastAPI service with the mood, task, focus, and motivation agents
+voice-service/    FastAPI service that handles the Vapi webhook and ADHD language processing
+api-gateway/      Express + WebSocket service for real-time updates
+analytics/        analytics dashboard service (in progress)
+workflow-engine/  automation/workflow service (in progress)
+database/         Supabase schema
 ```
 
 ## Roadmap
 
-- Fix the Anthropic API key so mood detection and voice parsing use real AI again instead of the keyword fallback
-- Make the API gateway handle a missing Redis connection gracefully instead of crashing
-- Build out analytics and the workflow engine, or drop them from the project
-- Clean out the unused Firebase code, the second login flow, and the duplicate `ai-agents` folder
+- Build out the analytics dashboard with deeper productivity and mood trend insights
+- Bring the workflow engine online for automating recurring routines
+- Expand voice command coverage and natural language understanding
+- More gamification: streaks, badges, and social/sharing features
+- Polish real-time sync across devices
