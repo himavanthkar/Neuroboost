@@ -1,313 +1,198 @@
-#  NeuroBoost - AI-Powered ADHD Productivity Platform
+# NeuroBoost - AI-Powered ADHD Productivity Platform
 
-## **Current Status: PARTIALLY WORKING**
+NeuroBoost is a hackathon project that combines voice input, an AI "mood" detector, and a
+gamified task manager into an ADHD-focused productivity app. It was built to target several
+sponsor prize tracks (Anthropic, Google Gemini, Vapi, Groq, Letta, Orkes), which explains why
+the codebase wires up more services and providers than are actually finished.
 
-###  **What's Actually Working:**
-- **Frontend (React)**: Beautiful UI with mood-responsive theming
-- **AI Agents Service**: Basic voice-to-task conversion
-- **Voice Service**: VAPI webhook integration and task forwarding
-- **Task Management**: Create, edit, delete tasks via voice and UI
-- **Mood-Based Theming**: UI adapts colors based on detected mood
+This document reflects a hands-on audit of the current branch: every claim below was checked
+by reading the code and, where practical, by actually running the services and hitting their
+endpoints (not just re-stating what an older README said).
 
-###  **What's Partially Working:**
-- **API Gateway**: Running but crashing due to Redis connection issues
-- **Database Integration**: Supabase connected but UUID errors with demo users
-- **Voice Integration**: Working but API key authentication issues
+## Screenshots
 
-### **What's Broken/Missing:**
-- **Analytics Service**: Empty directory, no implementation
-- **Workflow Engine**: Empty directory, no implementation
-- **Redis**: Not running, causing service crashes
-- **PostgreSQL**: Not running (Docker services not started)
-- **API Keys**: Anthropic, VAPI, and other keys need proper configuration
+The landing page and login screen render correctly once the frontend has a valid `.env` file
+(see [Known Issues](#known-issues-verified) below - by default it does not, and the app fails
+to load at all).
 
----
+| Landing page | Features section |
+| --- | --- |
+| ![Landing page](docs/screenshots/landing-page.png) | ![Features section](docs/screenshots/features-section.png) |
 
-##  **Quick Start (Current Working Setup)**
+| Login page |
+| --- |
+| ![Login page](docs/screenshots/login-page.png) |
 
-### 1. **Start Working Services**
+Note the "Quick Login" buttons on the login screen - they are leftovers from an earlier
+Firebase-based demo user system and will fail against a real Supabase backend unless those
+exact demo accounts are created there manually.
+
+## What actually works today
+
+| Area | Status | Notes |
+| --- | --- | --- |
+| Frontend UI (React/Vite/Tailwind) | Renders correctly | Requires a `frontend/.env` with real Supabase values - see bug below |
+| Supabase auth + task storage | Works | Live path used by `Login.jsx`/`SignUp.jsx`/`MainApp.jsx` |
+| Voice-to-task via VAPI webhook | Partially works | Endpoint and plumbing work; AI parsing silently falls back to keyword matching because the configured Anthropic key is rejected (401) |
+| Mood detection | Partially works | Same Anthropic key problem - always returns a generic fallback mood, never a real Claude-derived one |
+| Mood-based theming, gamification UI, CBT/Pomodoro views | UI implemented | Frontend components exist and render; not all are wired to real backend logic |
+| API Gateway (Express + WebSocket) | Crashes on startup | Unhandled Redis connection error kills the process - see bug below |
+| Analytics service | Not implemented | Directory only contains a `Dockerfile` and `requirements.txt`, no application code |
+| Workflow engine | Not implemented | Same as above |
+
+## Architecture
+
+```
+Frontend (React/Vite)  --->  Voice Service (FastAPI)  --->  AI Agents (FastAPI)  --->  Supabase
+        |                                                         |
+        +--------------------- Supabase (direct) --------------- +
+
+API Gateway (Express + Redis pub/sub + WebSocket) - bridges Redis events to the frontend,
+but is not on the critical path for voice-to-task (the frontend calls the Voice Service
+directly) and currently crashes if Redis is unreachable.
+```
+
+| Service | Port | Tech | Real implementation? |
+| --- | --- | --- | --- |
+| `frontend/` | 5173 | React + Vite + Tailwind | Yes |
+| `voice-service/` | 8002 | FastAPI | Yes (VAPI webhook, ADHD language processor) |
+| `ai_agents/` | 8000 | FastAPI | Yes, but only 2 of 4 agents call a real model (see below) |
+| `ai-agents/` (hyphen) | - | FastAPI | Orphaned stub, not used anywhere |
+| `api-gateway/` | 3000 | Express + ws + Redis | Yes, but crashes without Redis |
+| `analytics/` | 8001 | - | Empty (Dockerfile + requirements.txt only) |
+| `workflow-engine/` | 8003 | - | Empty (Dockerfile + requirements.txt only) |
+
+### AI agents - what's real vs. hardcoded
+
+`ai_agents/agents/` has four agents. Only two actually call a model; the other two claim to
+use Groq/Letta in their docstrings but never make an API call:
+
+- `task_agent.py` (**real**): calls Anthropic Claude to turn a voice transcript into
+  structured, ADHD-friendly tasks, with a keyword-based fallback if the call fails.
+- `mood_agent.py` (**partially real**): calls Claude for text-based mood detection with a
+  keyword fallback. The "audio mood" analysis claims to use Groq but is actually a hardcoded
+  if/else on pace/pitch/energy labels - `self.groq_client` is initialized but never called.
+- `focus_agent.py` (**stub**): initializes a Groq client but `analyze_focus_level()` always
+  returns the same hardcoded score (`0.7`) and static suggestions regardless of input.
+- `motivate_agent.py` (**stub**): stores a Letta API key but never calls Letta. Motivation
+  messages are a hardcoded dictionary keyed by mood string.
+
+## Known issues (verified)
+
+These were reproduced directly, not just inferred from reading code:
+
+1. **Frontend crashes to a blank white screen without `frontend/.env`.** There is no
+   `frontend/.env` or `.env.example` in the repo. `services/supabase.js` calls
+   `createClient()` with the placeholder string `'YOUR_SUPABASE_URL'` when the env var is
+   missing, which throws `Invalid URL` at module load time and prevents React from mounting
+   at all - no error is shown to the user, the page is just empty. Confirmed by running the
+   dev server with and without a valid-format `VITE_SUPABASE_URL`.
+2. **The configured `ANTHROPIC_API_KEY` is rejected by Anthropic** (`401 - API key is
+   invalid`), confirmed by running `ai_agents` and `voice-service` live. Every "AI" endpoint
+   (mood detection, voice-to-task, ADHD language analysis) silently swallows this error and
+   returns its generic fallback response, so the app still "works" but never actually reasons
+   about the input.
+3. **The API Gateway crashes on startup whenever Redis is unreachable.** In `index.js`, the
+   Redis subscriber is connected with `await subscriber.connect()` outside any try/catch,
+   inside a fire-and-forget async block. A refused connection becomes an unhandled promise
+   rejection, which Node treats as fatal. Confirmed by running `node index.js` without Redis -
+   it prints "listening on port ..." and then immediately crashes.
+4. **The hardcoded default `SUPABASE_URL` fallback in `ai_agents/main.py`
+   (`https://hbarpylljytrdijjcmix.supabase.co`) is unreachable** (DNS resolution failure),
+   confirmed via `/debug/tasks`.
+5. **Two parallel, conflicting auth systems exist, and only one is reachable.** The routed
+   pages (`Login.jsx`, `SignUp.jsx`) use Supabase auth via `AuthContext.jsx`. A second,
+   completely separate implementation - `AuthModal.jsx` + `AuthPage.jsx` +
+   `services/api.js` + `api-gateway/src/routes/auth.js` (a real bcrypt/JWT/Postgres login) -
+   is fully implemented but **`AuthPage` is never imported or routed anywhere**, so it's dead
+   code.
+6. **Leftover Firebase integration.** `frontend/src/services/firebase.js` contains a full,
+   working Firebase Auth/Firestore implementation with a hardcoded Firebase project config,
+   from before the project migrated to Supabase (see git history: "Migrate from Firebase to
+   Supabase"). It is only imported by the dead `AuthModal.jsx`, so it no longer runs, but it's
+   still shipped in the bundle.
+7. **Duplicate `ai-agents` directory.** Besides the real `ai_agents/` (underscore, used by
+   `docker-compose.yml`), there is a second `ai-agents/` (hyphen) directory with a trivial
+   stub FastAPI app (a single echo `/chat` endpoint). It isn't referenced by docker-compose or
+   any other service - likely an early scaffold that was never deleted.
+8. **Orphaned nested directory.** `NeuroBoost/workflow-engine/` (capitalized parent folder)
+   exists at the repo root containing only a `requirements.txt`. It isn't referenced by
+   docker-compose or any code path.
+9. **Two disconnected database schemas.** `database/supabase_schema.sql` defines the tables
+   actually used by the live Supabase path (`tasks`, `moods`, `users`, `voice_notes`,
+   `focus_sessions`, `analytics_events`, `ai_conversations`, `user_goals`,
+   `user_achievements`). `init-db/init.sql` is a separate Postgres bootstrap script for the
+   dead api-gateway auth path. They are not the same database and are not kept in sync.
+10. **Placeholder infrastructure credentials.** The root `.env` still has template values for
+    `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, and `JWT_SECRET` (e.g. `your_secure_password`), so
+    `docker-compose up` has not actually been run successfully end-to-end with this file.
+11. **Stray `README` file (no extension)** at the repo root is not documentation - it's an
+    old Docker Compose variant with a hackathon sponsor prize list. It's confusing to have
+    both `README` and `README.md` side by side; left in place for now since removing it is
+    outside the scope of this update, but it's a good cleanup candidate.
+
+## Quick start
+
+### Frontend only (UI preview, no backend required)
+
 ```bash
-# Frontend (React + Vite)
-cd frontend && npm run dev
-# Access: http://localhost:5173
+cd frontend
+npm install
+cat > .env << 'EOF'
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+EOF
+npm run dev
+# http://localhost:5173
+```
 
-# AI Agents Service (FastAPI)
+Without a real Supabase project, the landing page and login/signup forms will render, but
+authentication and task storage will not work.
+
+### Full stack
+
+```bash
+# 1. Voice + AI services (Redis is optional for these two - they degrade gracefully)
 cd ai_agents && python3 -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-# Access: http://localhost:8000/docs
-
-# Voice Service (FastAPI)
 cd voice-service && python3 -m uvicorn main:app --host 0.0.0.0 --port 8002 --reload
-# Access: http://localhost:8002/docs
+
+# 2. API Gateway (requires Redis to be running, or it will crash - see Known Issues #3)
+redis-server &
+cd api-gateway && npm install && npm run dev
+
+# 3. Frontend
+cd frontend && npm install && npm run dev
 ```
 
-### 2. **Test Voice Integration**
-- Open frontend at http://localhost:5173
-- Use voice widget to add tasks
-- Say: "Add groceries to Monday"
-- Tasks should appear in the UI
+### Required environment variables
 
----
+| Variable | Used by | Required for |
+| --- | --- | --- |
+| `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | frontend | App to render at all (see bug #1) |
+| `ANTHROPIC_API_KEY` | `ai_agents`, `voice-service` | Real mood detection / task parsing / ADHD language analysis |
+| `GROQ_API_KEY`, `LETTA_API_KEY` | `ai_agents` | Currently unused at runtime despite being read (see agent breakdown above) |
+| `VAPI_API_KEY`, `VAPI_PUBLIC_KEY` | voice widget, voice-service | Voice call integration |
+| `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD` | `api-gateway`, `ai_agents` | Real-time updates; gateway crashes without it, agents degrade gracefully |
 
-##  **Architecture Overview**
+## Testing commands
 
-### **Current Working Services:**
-```
-Frontend (React) ←→ Voice Service ←→ AI Agents ←→ Supabase
-     ↓                    ↓              ↓
-  Mood Themes        VAPI Webhook    Task Processing
-```
-
-### **Service Details:**
-
-#### **Frontend (Port 5173)**
-- **Tech**: React + Vite + TailwindCSS
-- **Features**: 
-  - Mood-responsive theming
-  - Task management UI
-  - Voice widget integration
-  - Multiple views (Dashboard, Tasks, Analytics, etc.)
-- **Status**: ✅ **FULLY WORKING**
-
-#### **AI Agents Service (Port 8000)**
-- **Tech**: FastAPI + Python
-- **Features**:
-  - Task creation from voice commands
-  - Basic mood detection
-  - Supabase integration
-- **Status**: ✅ **WORKING** (with database errors)
-- **Issues**: UUID errors with demo user IDs
-
-#### **Voice Service (Port 8002)**
-- **Tech**: FastAPI + Python
-- **Features**:
-  - VAPI webhook integration
-  - ADHD language processing
-  - Task forwarding to AI agents
-- **Status**: ✅ **WORKING** (with API key issues)
-- **Issues**: Anthropic API key authentication failures
-
-#### **API Gateway (Port 3000)**
-- **Tech**: Node.js + Express
-- **Status**: ⚠️ **CRASHING** (Redis connection issues)
-
----
-
-## 🔧 **Current Issues & Solutions**
-
-### **Critical Issues:**
-
-1. **Database UUID Errors**
-   ```
-   ERROR: invalid input syntax for type uuid: "demo"
-   ```
-   **Solution**: Replace hardcoded "demo" user IDs with proper UUIDs
-
-2. **API Key Authentication Failures**
-   ```
-   ERROR: 401 Unauthorized - invalid x-api-key
-   ```
-   **Solution**: Update `.env` file with valid API keys
-
-3. **Missing Services**
-   - Analytics service: Empty directory
-   - Workflow engine: Empty directory
-   - **Solution**: Implement or remove references
-
-4. **Redis Connection Issues**
-   ```
-   ERROR: connect ECONNREFUSED ::1:6379
-   ```
-   **Solution**: Start Redis or make it optional
-
-### **Environment Configuration**
-
-Create/update `.env` file with:
-```env
-# Database
-SUPABASE_URL=https://hbarpylljytrdijjcmix.supabase.co
-SUPABASE_ANON_KEY=your_supabase_key_here
-
-# API Keys (REQUIRED)
-ANTHROPIC_API_KEY=your_anthropic_key_here
-VAPI_API_KEY=your_vapi_key_here
-GROQ_API_KEY=your_groq_key_here
-
-# Optional Services
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=redis123
-```
-
----
-
-## 🎨 **Features That Actually Work**
-
-### **1. Voice-to-Task Integration**
-- Say: "Add workout to Monday"
-- Task automatically created and appears in UI
-- Works through VAPI webhook → Voice Service → AI Agents
-
-### **2. Mood-Based Theming**
-- UI colors change based on detected mood
-- Calm → Blue, Energetic → Orange, Focused → Green
-- Mood detection from voice/text input
-
-### **3. Task Management**
-- Create, edit, delete tasks
-- Weekly and daily views
-- Task completion tracking
-- Local state management with Supabase sync
-
-### **4. ADHD-Focused UI**
-- Non-overwhelming interface
-- Mood-responsive design
-- Voice accessibility
-- Gamification elements (XP system)
-
----
-
-## 🚨 **What's NOT Working (Despite Claims)**
-
-### **Marketing vs Reality:**
-
-| **Claimed** | **Reality** | **Status** |
-|-------------|-------------|------------|
-| "Modular AI Agents" | Only TaskAgent works | ⚠️ Partial |
-| "Real-time Analytics" | Analytics service missing | ❌ Broken |
-| "CBT Pomodoro Mode" | UI exists, functionality unclear | ⚠️ Partial |
-| "Advanced Mood Detection" | Basic mood detection with API issues | ⚠️ Partial |
-| "Workflow Engine" | Empty directory | ❌ Missing |
-| "Admin Dashboard" | UI exists, backend unclear | ⚠️ Partial |
-
----
-
-## 🧪 **Testing Commands**
-
-### **Test Working Services:**
 ```bash
-# Test AI Agents
 curl http://localhost:8000/health
-
-# Test Voice Service
 curl http://localhost:8002/health
-
-# Test Frontend
-open http://localhost:5173
+curl -X POST http://localhost:8000/mood/detect -H "Content-Type: application/json" \
+  -d '{"text":"I am so overwhelmed with everything today"}'
 ```
 
-### **Test Voice Integration:**
-1. Open http://localhost:5173
-2. Click voice widget
-3. Say: "Add groceries to Monday"
-4. Check if task appears in UI
+## Recommended next steps
 
----
-
-## 🔄 **Service Communication Flow**
-
-### **Working Flow:**
-```
-User Voice Input → VAPI → Voice Service → AI Agents → Supabase → Frontend
-```
-
-### **Current Issues:**
-- VAPI API key authentication
-- Supabase UUID validation
-- Redis connection for real-time updates
-
----
-
-## 📊 **Technical Debt**
-
-### **High Priority:**
-1. Fix UUID errors in database operations
-2. Configure valid API keys
-3. Implement missing services or remove references
-4. Add proper error handling
-
-### **Medium Priority:**
-1. Start Redis service or make optional
-2. Implement proper user authentication
-3. Add comprehensive testing
-4. Clean up hardcoded values
-
-### **Low Priority:**
-1. Add analytics service implementation
-2. Implement workflow engine
-3. Add comprehensive documentation
-4. Performance optimization
-
----
-
-## 🎯 **Accuracy Assessment: 6/10**
-
-### **What Works (60%):**
-- Frontend UI and UX
-- Basic voice-to-task functionality
-- Mood-based theming
-- Service communication structure
-
-### **What's Broken/Misleading (40%):**
-- Database integration issues
-- Missing core services
-- API key problems
-- Overstated feature claims
-
----
-
-## 🏆 **Bottom Line**
-
-**NeuroBoost is a solid foundation with excellent UX design and genuine ADHD-focused features. The core voice-to-task functionality works, but the backend infrastructure has significant issues that need fixing.**
-
-**For Demo**: Impressive and shows good understanding of ADHD needs
-**For Production**: Needs significant backend fixes and proper configuration
-
-### **Strengths:**
-- Beautiful, ADHD-friendly UI
-- Working voice integration
-- Mood-responsive theming
-- Good service architecture
-
-### **Weaknesses:**
-- Database integration issues
-- Missing services
-- API key configuration problems
-- Overstated feature claims
-
----
-
-## 🚀 **Next Steps**
-
-1. **Fix Critical Issues:**
-   - Update API keys in `.env`
-   - Fix UUID errors in database operations
-   - Start Redis or make optional
-
-2. **Implement Missing Services:**
-   - Create analytics service
-   - Implement workflow engine
-   - Or remove references to them
-
-3. **Improve Error Handling:**
-   - Add graceful degradation
-   - Better error messages
-   - Proper fallbacks
-
-4. **Testing & Documentation:**
-   - Add comprehensive tests
-   - Update documentation
-   - Create setup guides
-
----
-
-## 📝 **Notes**
-
-- Project shows real potential for ADHD productivity
-- Good understanding of ADHD user needs
-- Technical implementation needs work
-- Ready for hackathon demo with current features
-- Needs backend fixes for production use
-
-**Last Updated**: January 2025
-**Status**: Partially Working (6/10)
-**Recommendation**: Fix critical issues before production deployment
+1. Add a `frontend/.env.example` and fail with a clear error message (instead of a blank
+   screen) when Supabase env vars are missing.
+2. Wrap the API Gateway's Redis `connect()` calls in try/catch so a missing Redis instance
+   degrades gracefully instead of crashing the process, matching the Python services.
+3. Replace or refresh the Anthropic API key, and add visible error surfacing (not silent
+   fallback) so it's obvious when AI parsing isn't actually happening.
+4. Remove dead code: `ai-agents/` (hyphen stub), `NeuroBoost/workflow-engine/`,
+   `frontend/src/services/firebase.js`, `AuthModal.jsx`/`AuthPage.jsx`, and the api-gateway
+   JWT/Postgres auth route - or finish and wire them up if they're still wanted.
+5. Decide on one auth system and one database schema, and delete the other.
+6. Implement or remove the `analytics` and `workflow-engine` services.
